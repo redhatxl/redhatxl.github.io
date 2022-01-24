@@ -12,8 +12,8 @@ edit_uri: ""
 # Copyright
 copyright: Copyright &copy; 2016 - 2022 kaliarch
 theme:
-  name: null
-  custom_dir: !ENV [THEME_DIR, "material"]
+  name: material
+
 
   # Static files
   static_templates:
