@@ -23,7 +23,7 @@ theme:
   search_index_only: true
 
     # Default values, taken from mkdocs_theme.yml
-  language: en
+  language: zh
   features:
     - content.code.annotate
     # - content.tabs.link
@@ -46,40 +46,22 @@ theme:
       primary: indigo
       accent: indigo
       toggle:
-        icon: material/toggle-switch
+        icon: material/lightbulb
         name: Switch to dark mode
     - scheme: slate
-      primary: red
-      accent: red
+      primary: purple
+      accent: purple
       toggle:
-        icon: material/toggle-switch-off-outline
+        icon: material/lightbulb-outline
         name: Switch to light mode
   font:
     text: Roboto
     code: Roboto Mono
-  favicon: assets/favicon.png
-  icon:
-    logo: logo
+  favicon: assets/images/favicon.png
+  logo: assets/images/logo.png
 
 
-# Customization
-extra:
-  analytics:
-    provider: google
-    property: !ENV GOOGLE_ANALYTICS_KEY
-  social:
-    - icon: fontawesome/brands/github
-      link: https://github.com/squidfunk
-    - icon: fontawesome/brands/gitter
-      link: https://gitter.im/squidfunk/mkdocs-material
-    - icon: fontawesome/brands/docker
-      link: https://hub.docker.com/r/squidfunk/mkdocs-material/
-    - icon: fontawesome/brands/twitter
-      link: https://twitter.com/squidfunk
-    - icon: fontawesome/brands/linkedin
-      link: https://linkedin.com/in/squidfunk/
-    - icon: fontawesome/brands/instagram
-      link: https://instagram.com/squidfunk
+
 
 
 # Plugins
@@ -94,6 +76,15 @@ plugins:
         upgrading.md: upgrade.md
   - minify:
       minify_html: true
+
+
+# Customization
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/redhatxl
+    - icon: fontawesome/brands/weixin
+      link: https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220125122524.png
 
 
 # Extensions
@@ -140,9 +131,12 @@ markdown_extensions:
 # Page tree
 nav:
   - 首页: index.md
-  - 磊哥的云原生笔记:
-    - API: API 文档slate.md
-    - Argo CD: Argo CD.md
-    - Creating your site: creating-your-site.md
+  - 云原生:
+    - 01-k8s 开发相关概念介绍: cloud-native/develop/01-k8s 开发相关概念介绍.md
+    - 02-K8s API 调用方式: cloud-native/develop/02-K8s API 调用方式.md
+    - 03-Client-go 使用: cloud-native/develop/03-Client-go 使用.md
+    - 04-Cobra + Client-go实现K8s简单插件开发: cloud-native/develop/04-Cobra + Client-go实现K8s简单插件开发.md
+    - 05-client-go之ListWatcher源码分析: 05-client-go之ListWatcher源码分析.md
+    - 06-client-go之Reflector源码分析: 06-client-go之Reflector源码分析.md
+    - 07-client-go之Informer源码分析: 07-client-go之Informer源码分析.md
 
-  - 云原生开发
