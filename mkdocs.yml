@@ -131,22 +131,48 @@ markdown_extensions:
 # Page tree
 nav:
   - 首页: index.md
-
   - 云原生:
     - 开发: 
-      - 01-k8s 开发相关概念介绍: cloud-native/develop/01-k8s 开发相关概念介绍.md
-      - 02-K8s API 调用方式: cloud-native/develop/02-K8s API 调用方式.md
-      - 03-Client-go 使用: cloud-native/develop/03-Client-go 使用.md
-      - 04-Cobra + Client-go实现K8s简单插件开发: cloud-native/develop/04-Cobra + Client-go实现K8s简单插件开发.md
-      - 05-client-go之ListWatcher源码分析: cloud-native/develop/05-client-go之ListWatcher源码分析.md
-      - 06-client-go之Reflector源码分析: cloud-native/develop/06-client-go之Reflector源码分析.md
-      - 07-client-go之Informer源码分析: cloud-native/develop/07-client-go之Informer源码分析.md
-
+      - cloud-native/develop/01-k8s 开发相关概念介绍.md
+      - cloud-native/develop/02-K8s API 调用方式.md
+      - cloud-native/develop/03-Client-go 使用.md
+      - cloud-native/develop/04-Cobra + Client-go实现K8s简单插件开发.md
+      - cloud-native/develop/05-client-go之ListWatcher源码分析.md
+      - cloud-native/develop/06-client-go之Reflector源码分析.md
+      - cloud-native/develop/07-client-go之Informer源码分析.md
     - 运维:
-      - index.md
+      - other.md
     - 其他:
-      - index.md
-
+      - other.md
   - devops:
     - GitLab CI:
-      - index.md
+      - devops/Gitlab CI/01敏捷无敌之实战Gitlab CI.md
+      - devops/Gitlab CI/02敏捷无敌之Gitlab CI架构流程详解.md
+      - devops/Gitlab CI/03实战Gitlab CI + Supervisor 发布Python项目.md
+      - devops/Gitlab CI/04实战前后端项目及混合环境Gitlab CI.md
+      - devops/Gitlab CI/05实战Gitlab CI + Kubernetes 代码发布.md
+    - 其他: other.md
+  - 开发技术:
+    - 设计模式:
+      - 创建型: 
+        - develop/设计模式/创建型/01-golang设计模式之简单工厂模式.md
+        - develop/设计模式/创建型/02-golang设计模式之工厂方法模式.md
+        - develop/设计模式/创建型/03-golang设计模式之抽象工厂模式.md
+        - develop/设计模式/创建型/04-golang设计模式之建造者模式.md
+        - develop/设计模式/创建型/05-golang设计模式之单例模式.md
+      
+      - 结构型:
+        - develop/设计模式/结构型/01-golang设计模式之装饰器模式.md
+        - develop/设计模式/结构型/02-golang设计模式之代理模式.md
+        - develop/设计模式/结构型/03-golang设计模式之桥接模式.md
+        - develop/设计模式/结构型/04-golang设计模式之适配器模式.md
+      - 行为型:
+        - develop/设计模式/行为型/01-golang设计模式之策略模式.md
+        - develop/设计模式/行为型/02-golang设计模式之观察者模式.md
+        - develop/设计模式/行为型/03-golang设计模式之模版模式.md
+        - develop/设计模式/行为型/04-golang设计模式之职责链模式.md
+    - Golang:
+      - Gin:
+        - other.md
+      - 其他:
+        - other.md

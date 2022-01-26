@@ -1,18 +1,18 @@
-# 03-Client-go 使用
+# 3.Client-go 的使用
 
-# 一 client-go简介
+## 一 client-go简介
 
 近期有需求要对k8s的一些数据进行自定义整合，利用client-go可以快速方便的实现需求，在K8s运维中，我们可以使用kubectl、客户端库或者REST请求来访问K8S API。而实际上，无论是kubectl还是客户端库，都是封装了REST请求的工具。client-go作为一个客户端库，能够调用K8S API，实现对K8S集群中资源对象（包括deployment、service、ingress、replicaSet、pod、namespace、node等）的增删改查等操作。
 
-# 二 简介
+## 二 简介
 
-## 2.1 结构图
+### 2.1 结构图
 
 ![](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/517cccb9e9424b76975d18f45d68aa97~tplv-k3u1fbpfcp-zoom-1.image)
 
 从上图可以看到client-go 中包含四种client，`ClientSet`，`DynamicClient`，`DiscoveryClient`都是`RestClient`的具体实现。
 
-## 2.2 目录结构
+### 2.2 目录结构
 
 ```properties
 # tree client-go/ -L 1
@@ -42,14 +42,14 @@ client-go/
 - `transport`：提供安全的 TCP 连接，支持 Http Stream，某些操作需要在客户端和容器之间传输二进制流，例如 exec、attach 等操作。该功能由内部的 spdy 包提供支持
 - `util`：提供常用方法，例如 WorkQueue 功能队列、Certificate 证书管理等
 
-# 三 认证
+## 三 认证
 
 这里值得一提的是go mod通过go client 对接k8s的时候有个小坑
 那么就是我们需要在go mod文件中指定k8s版本 不然会默认拉去最新的k8s版本的包 我们也知道不同的k8s版本的api会出现差异	
 
-## 3.1 认证
+### 3.1 认证
 
-### 3.1.1 token
+#### 3.1.1 token
 
 ```shell
 # APISERVER=$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')
@@ -59,7 +59,7 @@ client-go/
 
 ![](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/685a0c71d2c34786ab9dec06f95c2072~tplv-k3u1fbpfcp-zoom-1.image)
 
-# 四 client-go四种类型
+## 四 client-go四种类型
 
 ### 4.1 RestClient
 
@@ -315,7 +315,7 @@ func main() {
 
 ![](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/2ae077286c584204b840b4d01c8cf37a~tplv-k3u1fbpfcp-zoom-1.image)
 
-# 五 其他
+## 五 其他
 
 学习client-go，可以非常方便的利用其对k8s集群资源进行操作，kubeconfig→rest.config→clientset→具体的client(CoreV1Client)→具体的资源对象(pod)→RESTClient→http.Client→HTTP请求的发送及响应
 
@@ -323,7 +323,7 @@ func main() {
 
 本篇为简单利用client-go 实现简单的k8s资源操作，后期利用例如 kubebuilder 和 operator-SDK 编写operator也需要深入的理解和学习client-go。后期继续继续深入学习。
 
-# 参考链接
+## 参考链接
 
 * https://www.voidking.com/dev-k8s-client-go/
 * https://godoc.org/k8s.io/client-go/kubernetes

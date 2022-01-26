@@ -1,8 +1,10 @@
-# 一 背景
+# 6.Client-go源码分析之Reflector
+
+## 一 背景
 
 Reflector 是保证 Informer 可靠性的核心组件，在丢失事件，收到异常事件，处理事件失败等多种异常情况下需要考虑的细节很多。单独的listwatcher缺少重新连接和重新同步机制，有可能出现数据不一致问题。其对事件响应是同步的，如果执行复杂的操作会引起阻塞，需要引入队列; 
 
-# 二 Reflector
+## 二 Reflector
 
 Reflector可以成为反射器，将etcd中的数据反射到存储（DeltaFIFO）中。Reflector通过其内部的List操作获取所有资源对象数据，保存到本地存储，之后Watch监视资源变化，触发对应事件处理，例如Add、Update、Delete等。
 
@@ -85,7 +87,7 @@ func NewNamedReflector(name string, lw ListerWatcher, expectedType interface{}, 
 }
 ```
 
-# 三 流程
+## 三 流程
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220120163550.png)
 
@@ -103,9 +105,9 @@ func NewNamedReflector(name string, lw ListerWatcher, expectedType interface{}, 
 
 * List只做一次全量同步，watch持续做增量同步。
 
-# 四 Reflector关键方法
+## 四 Reflector关键方法
 
-## 4.1 构造方法
+### 4.1 构造方法
 
 ```go
 // NewReflector 创建一个新的反射器对象，将使给定的 Store 保持与服务器中指定的资源对象的内容同步。
@@ -141,7 +143,7 @@ func NewNamespaceKeyedIndexerAndReflector(lw ListerWatcher, expectedType interfa
 }
 ```
 
-## 4.2 Run方法
+### 4.2 Run方法
 
 ```go
 
@@ -157,7 +159,7 @@ func (r *Reflector) Run(stopCh <-chan struct{}) {
 }
 ```
 
-## 4.3 ListWatch
+### 4.3 ListWatch
 
 - List部分逻辑：设置分页参数；执行list方法；将list结果同步进DeltaFIFO队列中，其实是调用store中的Replace方法。
 
@@ -369,7 +371,7 @@ func (r *Reflector) ListAndWatch(stopCh <-chan struct{}) error {
 
 ```
 
-## 4.4 LastSyncResourceVersion
+### 4.4 LastSyncResourceVersion
 
 获取上一次同步的资源版本
 
@@ -381,7 +383,7 @@ func (r *Reflector) LastSyncResourceVersion() string {
 }
 ```
 
-## 4.5 resyncChan
+### 4.5 resyncChan
 
 返回一个定时通道和清理函数，清理函数就是停止计时器。这边的定时重新同步是使用定时器实现的。
 
@@ -399,7 +401,7 @@ func (r *Reflector) resyncChan() (<-chan time.Time, func() bool) {
 }
 ```
 
-## 4.6 syncWith
+### 4.6 syncWith
 
 将从apiserver list的资源对象结果同步进DeltaFIFO队列中，调用队列的Replace方法实现。
 
@@ -413,7 +415,7 @@ func (r *Reflector) syncWith(items []runtime.Object, resourceVersion string) err
 }
 ```
 
-## 4.7 watchHandler
+### 4.7 watchHandler
 
 watch的处理：接收watch的接口作为参数，watch接口对外方法是Stop和Resultchan,前者关闭结果通道，后者获取通道。
 
@@ -504,7 +506,7 @@ loop:
 
 ```
 
-## 4.8 relistResourceVersion
+### 4.8 relistResourceVersion
 
 `relistResourceVersion` 函数获得反射器 relist 的资源版本，如果资源版本非 0，则表示根据资源版本号继续获取，当传输过程中遇到网络故障或者其他原因导致中断，下次再连接时，会根据资源版本号继续传输未完成的部分。可以使本地缓存中的数据与Etcd集群中的数据保持一致，该函数实现如下所示：
 
@@ -528,7 +530,7 @@ func (r *Reflector) relistResourceVersion() string {
 }
 ```
 
-# 五 整体流程
+## 五 整体流程
 
 ```go
 // k8s.io/client-go/informers/apps/v1/deployment.go
@@ -574,7 +576,7 @@ func NewFilteredDeploymentInformer(client kubernetes.Interface, namespace string
 
 这就是 Reflector 反射器中最核心的 `ListAndWatch` 实现，从上面的实现我们可以看出获取到的数据最终都流向了本地的 Store，也就是 DeltaFIFO，所以接下来我们需要来分析 DeltaFIFO 的实现。
 
-# 六 小试牛刀
+## 六 小试牛刀
 
 ```go
 package main
@@ -697,7 +699,11 @@ func main() {
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220120194143.png)
 
-# 参考链接
+## 七 总结
+
+通过本文，可以了解Reflector通过ListWatcher从Kubernetes API中获取对象的流程，以及存储到store中，后续会对DeltaFIFO进行源码研读，通过结合informer，来加深对整个informer的理解。
+
+## 参考链接
 
 * https://blog.csdn.net/u013276277/article/details/108592288
 * https://www.jianshu.com/p/1daeae7b6970

@@ -1,4 +1,4 @@
-# 02-K8s API访问方式方式
+# 2.K8s API访问方式
 
 通常，Kubernetes API 支持通过标准 HTTP `POST`、`PUT`、`DELETE` 和 `GET` 在指定 PATH 路径上创建、更新、删除和检索操作，并使用 JSON 作为默认的数据交互格式。
 
@@ -35,7 +35,7 @@ API 请求处理过程
 - 接下来根据请求的路径，通过 handler 路由到各种程序中 [k8s.io/apiserver/pkg/server/handler.go](https://github.com/kubernetes/kubernetes/blob/66674f549626cc41f04e475d2c0e865116c4cd40/staging/src/k8s.io/apiserver/pkg/server/handler.go#L42:6)
 - 每个 API Group 都注册了一个 handler , 详情参见[k8s.io/apiserver/pkg/endpoints/groupversion.go](https://github.com/kubernetes/kubernetes/blob/66674f549626cc41f04e475d2c0e865116c4cd40/staging/src/k8s.io/apiserver/pkg/endpoints/groupversion.go#L99)和 [k8s.io/apiserver/pkg/endpoints/installer.go](https://github.com/kubernetes/kubernetes/blob/66674f549626cc41f04e475d2c0e865116c4cd40/staging/src/k8s.io/apiserver/pkg/endpoints/installer.go#L183) 它接受 HTTP 请求和上下文，并从 etcd 中检索和传递请求的对象进行数据处理。
 
-# 一 kubectl
+## 一 kubectl
 
 ```bash
 $ kubectl get --raw /
@@ -129,13 +129,9 @@ $ kubectl get --raw /apis/batch/v1 | python -m json.tool
 }
 ```
 
+## 二 程序访问
 
-
-
-
-# 二 程序访问
-
-## 2.1 Go Client
+### 2.1 Go Client
 
 要获得这个库，运行以下命令: go get k8s.io/client-go@kubernetes- < kubernetes-version-number > See https://github.com/kubernetes/client-go/releases 查看支持哪些版本。
 
@@ -162,7 +158,7 @@ func main() {
 }
 ```
 
-## 2.2 Python Client
+### 2.2 Python Client
 
 要使用 Python 客户端，运行以下命令: pip install kubernetes 查看 Python 客户端库页面获取更多安装选项。
 
@@ -180,9 +176,9 @@ for i in ret.items:
     print("%s\t%s\t%s" % (i.status.pod_ip, i.metadata.namespace, i.metadata.name))
 ```
 
-# 三 postman
+## 三 postman
 
-## 3.1 创建admin sa用户
+### 3.1 创建admin sa用户
 
 - 查看sa
 
@@ -205,7 +201,7 @@ NAME         SECRETS   AGE
 admin-user   1         11m
 ```
 
-## 3.2 **用户授权**
+### 3.2 **用户授权**
 
 编写RoleBinding.yaml文件，给于cluster-admin角色
 
@@ -229,7 +225,7 @@ EOF
 kubectl apply -f  RoleBinding.yaml
 ```
 
-## 3.3 查看
+### 3.3 查看
 
 ```shell
 $ kubectl get secret -n kube-system | grep admin
@@ -240,13 +236,13 @@ $ kubectl describe secrets `kubectl get secret -n kube-system | grep admin | awk
 
 
 
-## 3.4 使用token进行测试api
+### 3.4 使用token进行测试api
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20211014163052.png)
 
 在postaman中关闭SSL认证（setting）
 
-## 3.5 API查阅
+### 3.5 API查阅
 
 https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/deployment-v1/
 
@@ -254,9 +250,9 @@ https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.22/
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20211014164553.png)
 
-# 四 curl访问
+## 四 curl访问
 
-## 4.1 kubectl proxy
+### 4.1 kubectl proxy
 
 下面的命令以它作为反向代理的模式运行 kubectl。它处理定位 API 服务器和身份验证。
 
@@ -321,7 +317,7 @@ $ curl http://127.0.0.1:8001/apis/batch/v1beta1
 ```
 ~~~
 
-## 4.2 没有 kubectl 代理
+### 4.2 没有 kubectl 代理
 
 通过将认证令牌直接传递给 API 服务器，可以避免使用 kubectl 代理，如下所示:
 
@@ -376,6 +372,6 @@ curl $APISERVER/api --header "Authorization: Bearer $TOKEN" --insecure
 }
 ```
 
-# 参考链接
+## 参考链接
 
 * https://kubernetes.io/docs/tasks/administer-cluster/access-cluster-api/

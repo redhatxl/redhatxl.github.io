@@ -1,4 +1,6 @@
-# 一 背景
+# 5.Client-go源码分析之ListWatcher
+
+## 一 背景
 
 kubernetes所有API对象都存储在etcd中，并只能通过apiserver访问。如果很多客户端频繁的列举全量对象（比如列举所有的Pod），这会造成apiserver不堪重负。
 
@@ -8,7 +10,7 @@ ListerWatcher是Lister和Watcher的结合体，ListerWatcher负责列举全量�
 
 本文值得客户端本地缓存就是Indexer，client-go不仅实现了缓存，同时还加了索引，进一步提升了检索效率。
 
-# 二 ListerWatcher
+## 二 ListerWatcher
 
 Kubernetes 控制面 (control plane) 的核心是 **API 服务器 (API server)**。API 服务器负责提供 HTTP API，以供用户，集群中的不同部分和集群外部组件相互通信。控制器也不例外，所有控制器都通过 API 获取集群的当前状态，也通过 API 对集群状态进行修改。
 
@@ -18,7 +20,7 @@ list-watch，作为k8s系统中统一的异步消息传递方式，对系统的�
 
 值得一提的是，Kubernetes 提供了 [watch](https://link.juejin.cn?target=https%3A%2F%2Fkubernetes.io%2Fdocs%2Freference%2Fusing-api%2Fapi-concepts%2F%23efficient-detection-of-changes) 机制方便客户端实时获取集群状态，有了这个接口，控制器才得以无延迟（准确地说是低延迟）地对状态变更作出响应。这里指的 "状态变更"，就是我们常说的**事件 (event)**。
 
-## 2.1 EventType
+### 2.1 EventType
 
 ```go
 // EventType defines the possible types of events.
@@ -33,7 +35,7 @@ const (
 )
 ```
 
-## 2.2 ListerWatcher定义
+### 2.2 ListerWatcher定义
 
 ```go
 // 复制代码
@@ -59,7 +61,7 @@ type ListerWatcher interface {
 
 ```
 
-## 2.3 创建ListWatcher对象
+### 2.3 创建ListWatcher对象
 
 ```go
 
@@ -72,7 +74,7 @@ func NewListWatchFromClient(c Getter, resource string, namespace string, fieldSe
 }
 ```
 
-# 三 小试牛刀
+## 三 小试牛刀
 
 ```shell
 $ kubectl proxy
@@ -87,7 +89,7 @@ $ kubectl run nginx --image=nginx
 {"type":"ADDED","object":{"kind":"Pod","apiVersion":"v1","metadata":{"name":"nginx","namespace":"default","uid":"8d0548ce-fb67-4b71-93ec-59ad67b429d9","resourceVersion":"2925331","creationTimestamp":"2022-01-20T07:32:22Z","labels":{"run":"nginx"},"managedFields":[{"manager":"kubectl-run","operation":"Update","apiVersion":"v1","time":"2022-01-20T07:32:22Z","fieldsType":"FieldsV1","fieldsV1":{"f:metadata":{"f:labels":{".":{},"f:run":{}}},"f:spec":{"f:containers":{"k:{\"name\":\"nginx\"}":{".":{},"f:image":{},"f:imagePullPolicy":{},"f:name":{},"f:resources":{},"f:terminationMessagePath":{},"f:terminationMessagePolicy":{}}},"f:dnsPolicy":{},"f:enableServiceLinks":{},"f:restartPolicy":{},"f:schedulerName":{},"f:securityContext":{},"f:terminationGracePeriodSeconds":{}}}}]},"spec":{"volumes":[{"name":"kube-api-access-nc5v8","projected":{"sources":[{"serviceAccountToken":{"expirationSeconds":3607,"path":"token"}},{"configMap":{"name":"kube-root-ca.crt","items":[{"key":"ca.crt","path":"ca.crt"}]}},{"downwardAPI":{"items":[{"path":"namespace","fieldRef":{"apiVersion":"v1","fieldPath":"metadata.namespace"}}]}}],"defaultMode":420}}],"containers":[{"name":"nginx","image":"nginx","resources":{},"volumeMounts":[{"name":"kube-api-access-nc5v8","readOnly":true,"mountPath":"/var/run/secrets/kubernetes.io/serviceaccount"}],"terminationMessagePath":"/dev/termination-log","terminationMessagePolicy":"File","imagePullPolicy":"Always"}],"restartPolicy":"Always","terminationGracePeriodSeconds":30,"dnsPolicy":"ClusterFirst","serviceAccountName":"default","serviceAccount":"default","securityContext":{},"schedulerName":"default-scheduler","tolerations":[{"key":"node.kubernetes.io/not-ready","operator":"Exists","effect":"NoExecute","tolerationSeconds":300},{"key":"node.kubernetes.io/unreachable","operator":"Exists","effect":"NoExecute","tolerationSeconds":300}],"priority":0,"enableServiceLinks":true,"preemptionPolicy":"PreemptLowerPriority"},"status":{"phase":"Pending","qosClass":"BestEffort"}}}
 ```
 
-# 四 代码实现
+## 四 代码实现
 
 编写代码对default名称空间下的configmap进行list watch。
 
@@ -200,13 +202,13 @@ func main() {
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220120153657.png)
 
-# 其他
+## 五 总结
 
 * ListerWatcher就是为SharedIndexInformer列举全量对象、监视对象增量变化设计的接口，实现就是Clientset的List和Watch函数；
 * SharedIndexInformer利用ListerWatcher实现了本地缓存与apiserver之间的状态一致性；
 * 不仅可以提升客户端访问API对象的效率，同时可以将对象的增量变化回调给使用者；
 * 从原理上讲，可以用etcd的clientv3.Client实现ListerWatcher，SharedIndexInformer同步etcd的对象，这样一些简单的醒目就可以复用SharedIndexInformer了，毕竟不是所有的项目都需要一个apiserver；
 
-# 参考资料
+## 参考资料
 
 * https://blog.csdn.net/weixin_42663840/article/details/114379569
