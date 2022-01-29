@@ -4,7 +4,7 @@
 
 ## 个人信息：
 
-!!! info "其他博客"
+
         
         - [GitHub](https://github.com/redhatxl)
 
@@ -17,6 +17,6 @@
 
 ## 其他笔记
 
-!!! info "其他笔记"
+
 
         - [awesome-kubernetes-notes](https://github.com/overnote/awesome-kubernetes-notes)
