@@ -20,4 +20,7 @@ jobs:
             mkdocs-minify-plugin>=0.3 \          
             mkdocs-redirects>=1.0 \
             mkdocs-rss-plugin>=0.17
-      - run: mkdocs gh-deploy --force
+      - name: Deploy
+        env:
+          GOOGLE_ANALYTICS_KEY: ${{ secrets.GOOGLE_ANALYTICS_KEY }}
+        run: mkdocs gh-deploy --force
