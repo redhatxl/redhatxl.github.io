@@ -22,3 +22,5 @@
 !!!info
 
         - [awesome-kubernetes-notes](https://github.com/overnote/awesome-kubernetes-notes)
+
+        - [kubectl-img](https://github.com/redhatxl/kubectl-img)
