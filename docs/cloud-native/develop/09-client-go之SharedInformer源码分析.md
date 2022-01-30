@@ -1,4 +1,4 @@
-# 9.Client-go源码分析之Informer
+# 9.Client-go源码分析之SharedInformer
 
 ## 一 前言
 
@@ -453,3 +453,4 @@ func main() {
 * https://jimmysong.io/kubernetes-handbook/develop/client-go-informer-sourcecode-analyse.html
 
   
+
