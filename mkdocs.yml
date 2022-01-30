@@ -162,7 +162,12 @@ nav:
       - cloud-native/develop/04-Cobra + Client-go实现K8s简单插件开发.md
       - cloud-native/develop/05-client-go之ListWatcher源码分析.md
       - cloud-native/develop/06-client-go之Reflector源码分析.md
-      - cloud-native/develop/07-client-go之Informer源码分析.md
+      - cloud-native/develop/07-client-go之DeltaFIFO源码分析.md
+      - cloud-native/develop/08-client-go之Informer源码分析.md
+      - cloud-native/develop/09-client-go之SharedInformer源码分析.md
+      - cloud-native/develop/10-client-go之Indexer源码分析.md
+      - cloud-native/develop/11-client-go之Workqueue源码分析.md
+      - cloud-native/develop/12-自定义实现Controller.md
     - 运维:
       - other.md
     - 其他:
