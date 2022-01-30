@@ -1,4 +1,4 @@
-# 5.Client-go源码分析之ListWatcher
+# 5.Client-go源码分析之ListerWatcher
 
 ## 一 背景
 
