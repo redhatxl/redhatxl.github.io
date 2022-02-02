@@ -361,7 +361,7 @@ $ cp kubeimg /Users/xuel/.krew/bin/kubectl-img
 目前实现的比较简单，以此来抛砖引玉的功能，后期可以进行更多功能或其他插件的开发，自己动手丰衣足食。
 
 
-后期待再完善开源到github，个人主页：[github](https://github.com/redhatxl)，以供大家学习交流。
+目前已开源到github，项目地址：[kubectl-img](https://github.com/redhatxl/kubectl-img)，以供大家学习交流。
 
 
 ## 参考链接
