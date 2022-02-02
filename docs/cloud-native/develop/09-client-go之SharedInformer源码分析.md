@@ -36,6 +36,38 @@ deploymentLister := sharedInformerFactory.Apps().V1().Deployments().Lister()
 kubeInformerFactory.Start(stopCh)
 ```
 
+SharedInformer是一个接口，包含添加事件，当有资源变化时，会回掉通知使用者，启动函数及获取是否全利卿对象已经同步到本地存储中。
+
+```go
+type SharedInformer interface {
+    // 添加资源事件处理器，当有资源变化时就会通过回调通知使用者
+    AddEventHandler(handler ResourceEventHandler)
+    AddEventHandlerWithResyncPeriod(handler ResourceEventHandler, resyncPeriod time.Duration)
+    
+    // 获取一个 Store 对象
+    GetStore() Store
+    // 主要是用来将 Reflector 和 DeltaFIFO 组合到一起工作
+    GetController() Controller
+
+    // SharedInformer 的核心实现，启动并运行这个 SharedInformer
+    // 当 stopCh 关闭时候，informer 才会退出
+    Run(stopCh <-chan struct{})
+    
+    // 告诉使用者全量的对象是否已经同步到了本地存储中
+    HasSynced() bool
+    // 最新同步资源的版本
+    LastSyncResourceVersion() string
+}
+
+// SharedIndexInformer在SharedInformer基础上扩展了添加和获取Indexers的能力
+type SharedIndexInformer interface {
+    SharedInformer
+    // 在启动之前添加 indexers 到 informer 中
+    AddIndexers(indexers Indexers) error
+    GetIndexer() Indexer
+}
+```
+
 ## 三 源码分析
 
 ### 3.1 SharedInformerFactory
@@ -252,8 +284,6 @@ func (v *version) Pods() PodInformer {
 }
 ```
 
-
-
 cache 包暴露的 Informer 创建方法有以下 5 个：
 
 - New
@@ -272,6 +302,171 @@ func NewSharedIndexInformer(
 	indexers Indexers,
 ) SharedIndexInformer {}
 ```
+
+### 3.5 sharedProcessor
+
+sharedProcessor 有一个processorListener 的集合，可以将一个通知对象分发给它的监听器。有两种分发操作。同步分发到侦听器的子集，(a) 在偶尔调用 shouldResync 时重新计算，(b) 每个侦听器最初都被放入。非同步分发到每个侦听器。在SharedInformer中有非常重要的一个属性sharedProcessor，其包含了processorListener，来通知从sharedProcessor到ResourceEventHandler，其使用两个无缓冲chanel，两个goroutines和一个无界环形缓冲区，一个 goroutine 运行 `pop()`，它使用环形缓冲区中的存储将通知从 `addCh` 泵到 `nextCh`，而 `nextCh` 没有跟上。另一个 goroutine 运行 `run()`，它接收来自 `nextCh` 的通知并同步调用适当的处理程序方法。
+
+```
+type sharedProcessor struct {
+  // 所有processor是否都已经启动
+   listenersStarted bool
+   listenersLock    sync.RWMutex
+   // 通用处理列表
+   listeners        []*processorListener
+   // 定时同步的处理列表
+   syncingListeners []*processorListener
+   clock            clock.Clock
+   wg               wait.Group
+}
+
+// processorListener 通知
+type processorListener struct {
+	nextCh chan interface{}
+	addCh  chan interface{}  // 添加事件的通道
+
+	handler ResourceEventHandler
+
+	// pendingNotifications 是一个无边界的环形缓冲区，用于保存所有尚未分发的通知
+	pendingNotifications buffer.RingGrowing
+
+	requestedResyncPeriod time.Duration
+	
+	resyncPeriod time.Duration
+
+	nextResync time.Time
+
+	resyncLock sync.Mutex
+}
+```
+
+* add：事件添加通过addCh通道接受，notification就是事件，也就是从DeltaFIFO弹出的Deltas，addCh是一个无缓冲通道，所以可以将其看作一个事件分发器，从DeltaFIFO弹出的对象需要逐一送到多个处理器，如果处理器没有及时处理addCh则会被阻塞。
+
+```go
+func (p *processorListener) add(notification interface{}) {
+	p.addCh <- notification
+}
+```
+
+* pop：利用golang select来同时处理多个channel，直到至少有一个case表达式满足条件为止。
+
+```go
+func (p *processorListener) pop() {
+	defer utilruntime.HandleCrash()
+  // 通知run停止函数运行
+	defer close(p.nextCh) // Tell .run() to stop
+
+	var nextCh chan<- interface{}
+	var notification interface{}
+	for {
+		select {
+    // 由于nextCh还没有进行初始化，在此会zuse
+		case nextCh <- notification:
+			// 通知分发，
+			var ok bool
+			notification, ok = p.pendingNotifications.ReadOne()
+			if !ok { // 没有事件被Pop，则设置nextCh为nil
+				nextCh = nil // Disable 这个 select的 case
+			}
+    // 从p.addCh 中读取一个事件，消费addCh
+		case notificationToAdd, ok := <-p.addCh:
+			if !ok { // 如果关闭则直接退出
+				return
+			}
+      // pendingNotifications 为空，则说明没有notification 去pop
+			if notification == nil { 
+				// 把刚刚获取的事件通过 p.nextCh 发送给处理器
+				notification = notificationToAdd
+				nextCh = p.nextCh
+			} else { 
+        // 上一个事件还没发送完成（已经有一个通知等待发送），就先放到缓冲通道中
+				p.pendingNotifications.WriteOne(notificationToAdd)
+			}
+		}
+	}
+}
+```
+
+run() 和 pop() 是 processorListener 的两个最核心的函数，processorListener 就是实现了事件的缓冲和处理，在没有事件的时候可以阻塞处理器，当事件较多是可以把事件缓冲起来，实现了事件分发器与处理器的异步处理。processorListener 的 run() 和 pop() 函数其实都是通过 sharedProcessor 启动的协程来调用的，所以下面我们再来对 sharedProcessor 进行分析了。首先看下如何添加一个 processorListener：
+
+```go
+
+// 添加处理器
+func (p *sharedProcessor) addListener(listener *processorListener) {
+	p.listenersLock.Lock()  // 加锁
+	defer p.listenersLock.Unlock()
+  // 调用 addListenerLocked 函数
+	p.addListenerLocked(listener)
+  // 如果事件处理列表中的处理器已经启动了，则手动启动下面的两个协程
+  // 相当于启动后了
+	if p.listenersStarted {  
+    // 通过 wait.Group 启动两个协程，就是上面我们提到的 run 和 pop 函数
+		p.wg.Start(listener.run)
+		p.wg.Start(listener.pop)
+	}
+}
+
+// 将处理器添加到处理器的列表中
+func (p *sharedProcessor) addListenerLocked(listener *processorListener) {
+  // 添加到通用处理器列表中
+	p.listeners = append(p.listeners, listener)  
+  // 添加到需要定时同步的处理器列表中
+	p.syncingListeners = append(p.syncingListeners, listener)
+}
+```
+
+这里添加处理器的函数 addListener 其实在 sharedIndexInformer 中的 AddEventHandler 函数中就会调用这个函数来添加处理器。然后就是事件分发的函数实现：
+
+```go
+func (p *sharedProcessor) distribute(obj interface{}, sync bool) {
+	p.listenersLock.RLock()
+	defer p.listenersLock.RUnlock()
+  // sync 表示 obj 对象是否是同步事件对象
+  // 将对象分发给每一个事件处理器列表中的处理器
+	if sync {
+		for _, listener := range p.syncingListeners {
+			listener.add(obj)
+		}
+	} else {
+		for _, listener := range p.listeners {
+			listener.add(obj)
+		}
+	}
+}
+```
+
+然后就是将 sharedProcessor 运行起来：
+
+```go
+func (p *sharedProcessor) run(stopCh <-chan struct{}) {
+	func() {
+		p.listenersLock.RLock()
+		defer p.listenersLock.RUnlock()
+    // 遍历所有的处理器，为处理器启动两个后台协程：run 和 pop 操作
+    // 后续添加的处理器就是在上面的 addListener 中去启动的
+		for _, listener := range p.listeners {
+			p.wg.Start(listener.run)
+			p.wg.Start(listener.pop)
+		}
+    // 标记为所有处理器都已启动
+		p.listenersStarted = true
+	}()
+  // 等待退出信号
+	<-stopCh
+  // 接收到退出信号后，关闭所有的处理器
+	p.listenersLock.RLock()
+	defer p.listenersLock.RUnlock()
+  // 遍历所有处理器
+	for _, listener := range p.listeners {
+    // 关闭 addCh，pop 会停止，pop 会通知 run 停止
+		close(listener.addCh) 
+	}
+  // 等待所有协程退出，就是上面所有处理器中启动的两个协程 pop 与 run
+	p.wg.Wait() 
+}
+```
+
+到这里 sharedProcessor 就完成了对 ResourceEventHandler 的封装处理，当然最终 sharedProcessor 还是在 SharedInformer 中去调用的。
 
 sharedIndexInformer的HandleDeltas处理从deltaFIFO pod出来的增量时，先尝试更新到本地缓存cache，更新成功的话会调用processor.distribute方法向processor中的listener添加notification，listener启动之后会不断获取notification回调用户的EventHandler方法。
 
