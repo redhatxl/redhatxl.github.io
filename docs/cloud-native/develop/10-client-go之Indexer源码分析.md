@@ -42,6 +42,8 @@ type Indexer interface {
 
 indexer在 store存储的基础之上，拓展了对对象查找的索引能力。说白了，其实就是通过map结构实现不通维度的资源查找。
 
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220202133603.png)
+
 ```go
 // 映射索引键和对象键
 type Index map[string]sets.String
@@ -451,4 +453,5 @@ indexName:namespace, namespace:default, podname:smartkm-api-k8s-exampledeploy-7c
 ## 参考链接
 
 * https://www.jianshu.com/p/76e7b1a57d2c
+* https://mp.weixin.qq.com/s/-qiB1KilhwtcjI61m_x3jA
 
