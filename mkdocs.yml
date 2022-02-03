@@ -174,8 +174,11 @@ nav:
         - cloud-native/operator/tools/K8s 安全之Kube-bench.md
         - cloud-native/operator/tools/kubescape安全.md
       - 部署:
-        - cloud-native/operator/deploy/快速部署最小化K8s环境之minikube.md
+        - cloud-native/operator/deploy/最小化K8s环境之minikube.md
         - cloud-native/operator/deploy/最小化K8s环境部署之K3s
+        - cloud-native/operator/deploy/最小化K8s环境部署之Kind.md
+        - cloud-native/operator/deploy/最小化K8s环境部署之Kind.md
+
 
       - 排错:
         - cloud-native/operator/other/k8s 集群etcd排错.md
