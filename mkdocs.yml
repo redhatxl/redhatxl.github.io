@@ -172,13 +172,15 @@ nav:
     - 运维:
       - 工具:
         - cloud-native/operator/tools/K8s 安全之Kube-bench.md
-        - cloud-native/operator/tools/kubescape安全
+        - cloud-native/operator/tools/kubescape安全.md
       - 部署:
-        - cloud-native/operator/tools/快速部署最小化K8s环境之minikube.md
-        - cloud-native/operator/tools/最小化K8s环境部署之K3s
+        - cloud-native/operator/deploy/快速部署最小化K8s环境之minikube.md
+        - cloud-native/operator/deploy/最小化K8s环境部署之K3s
 
       - 排错:
-        - cloud-native/operator/tools/k8s 集群etcd排错.md
+        - cloud-native/operator/other/k8s 集群etcd排错.md
+        - cloud-native/operator/other/Kubernetes开发排错杂记.md
+        - cloud-native/operator/other/inside-kubernetes controller
 
     - 其他:
       - cloud-native/other/inside-kubernetes controller.md
@@ -215,6 +217,10 @@ nav:
         - develop/设计模式/行为型/04-golang设计模式之职责链模式.md
     - Golang:
       - Gin:
-        - other.md
+        - develop/Golang/gin/gin 框架实现热加载.md
+        - develop/Golang/gin/gin-swagger.md
+        - develop/Golang/gin/gin-validator参数校验.md
+        - develop/Golang/gin/gin框架优雅关机重启.md
+
       - 其他:
-        - other.md
+        - develop/Golang/Golang 分布式链路最终之jaeger
