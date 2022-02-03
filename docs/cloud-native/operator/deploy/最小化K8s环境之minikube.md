@@ -2,41 +2,41 @@
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20210806225917.png)
 
-# 一 背景
+## 一 背景
 
 最近需要给开发相关同时培训K8s，集群方式部署负责且占用资源多，简单快捷高效的单机版K8s环境，可谓开发人员不错的选择，minikube就是为解决这个问题而衍生出来的工具，它基于go语言开发， 是一个易于在本地运行 Kubernetes 的工具，可在你的笔记本电脑上的虚拟机内轻松创建单机版 Kubernetes 集群。便于尝试 Kubernetes 或使用 Kubernetes 日常开发。可以在单机环境下快速搭建可用的k8s集群，非常适合测试和本地开发。如果没有服务器或在本地笔记本安装，则可以在线使用https://labs.play-with-k8s.com/来体验K8s。
 
-# 二 Minikube简介
+## 二 Minikube简介
 
-## 2.1 主要组件
+### 2.1 主要组件
 
-### **localkube**
+#### **localkube**
 
 为了运行和管理 Kubernetes 的组件，Minikube 中使用了 Spread's 的 localkube，localkube 是一个独立的 Go 语言的二进制包，包含了所有 Kubernetes 的主要组件，并且以不同的 goroutine 来运行。
 
-### **libmachine**
+#### **libmachine**
 
 为了支持 MacOS 和 Windows，Minikube 在内部使用 libmachine 创建或销毁虚拟机，可以将它理解为一个虚拟机的驱动程序。至于在 Linux 上，由于集群可以直接本地运行，所以避免设置虚拟机。
 
-## 2.2 启动流程
+### 2.2 启动流程
 
 - 通过 libmachine 启动虚拟机，生成 Docker 相关证书及配置文件，启动 Docker;
 - 生成 Kubernetes 相关配置文件和 addons，以及相关证书，拷贝至虚拟机;
 - 基于之前的配置文件，生成启动脚本，启动 Kubernetes 集群，并可以通过 Client 进行访问。
 
-### MacOS/Windows
+#### MacOS/Windows
 
 - minikube -> libmachine -> virtualbox/hyper V -> linux VM -> localkube
 
-### Linux
+#### Linux
 
 - minikube -> docker -> localkube
 
-# 三 安装部署
+## 三 安装部署
 
-## 3.1 Mac安装
+### 3.1 Mac安装
 
-### 3.1.1 预先条件
+#### 3.1.1 预先条件
 
 - virtual box安装
 
@@ -48,7 +48,7 @@
 brew install kubectl
 ```
 
-### 3.1.2 安装
+#### 3.1.2 安装
 
 官方出品的minikube，默认连接的是google官方站点，由于众所周知的原因可以利用阿里云修改过的minikube，目前已经替换了其中国外的镜像源
 
@@ -56,7 +56,7 @@ brew install kubectl
 curl -Lo minikube http://kubernetes.oss-cn-hangzhou.aliyuncs.com/minikube/releases/v0.30.0/minikube-darwin-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
 ```
 
-### 3.1.3 启动
+#### 3.1.3 启动
 
 ```shell
 minikube start --vm-driver=virtualbox --registry-mirror=https://registry.docker-cn.com
@@ -68,7 +68,7 @@ minikube start --vm-driver=virtualbox --registry-mirror=https://registry.docker-
 
 
 
-## 3.2 Linux服务器安装
+### 3.2 Linux服务器安装
 
 * 基础环境
 
@@ -76,7 +76,7 @@ minikube start --vm-driver=virtualbox --registry-mirror=https://registry.docker-
 CentOS 7.8
 ```
 
-### 3.2.1 docker安装
+#### 3.2.1 docker安装
 
 ``` yum install -y yum-utils device-mapper-persistent-data lvm2 wget
 yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
@@ -85,7 +85,7 @@ yum -y install docker-ce
 systemctl start docker
 ```
 
-### 3.2.2 kubelet安装
+#### 3.2.2 kubelet安装
 
 ```shell
 curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kubectl &&\
@@ -93,7 +93,7 @@ chmod +x ./kubectl &&\
 mv ./kubectl /usr/bin/kubectl
 ```
 
-### 3.2.3 minikube安装
+#### 3.2.3 minikube安装
 
 ```shell
 $ curl -Lo minikube https://kubernetes.oss-cn-hangzhou.aliyuncs.com/minikube/releases/v1.18.1/minikube-linux-amd64 && $ chmod +x minikube && sudo mv minikube /usr/local/bin/
@@ -137,7 +137,7 @@ $ docker ps
 
 
 
-# 四 使用
+## 四 使用
 
 使用下列命令可以打开控制面板，自动跳转浏览器查看
 
@@ -211,7 +211,7 @@ Use "minikube [command] --help" for more information about a command.
 kubectl get pods
 ```
 
-# 参考链接
+## 参考链接
 
 * https://github.com/kubernetes/minikube
 * https://minikube.sigs.k8s.io/docs/start/

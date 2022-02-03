@@ -1,12 +1,12 @@
 # Inside Kubernetes controller
 
-# 前言
+## 前言
 
+一文详解Kubernetes controller
 
+## 一 高层架构
 
-# 一 高层架构
-
-## 1.1 K8s架构
+### 1.1 K8s架构
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20210924163658.png)
 
@@ -16,11 +16,11 @@
   * 控制管理资源（deployment，service，replicaset，daemonset，job，cronjob，endpoint，statefulset）
   * 是控制器的集合组，打包到同一个二进制文件中。
 
-## 1.2 Controller 相关
+### 1.2 Controller 相关
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20210926104335.png)
 
-### 1.2.1 控制循环
+#### 1.2.1 控制循环
 
 A. 控制循环概念：也称为调谐，通过资源的期望状态和真实状态通过一些了的观测、分析、执行对应动作，使得真实状态往期望状态逼近。
 
@@ -30,13 +30,13 @@ B. 控制循环流程：
 * 改变资源状态到期望状态。
 * 更新资源状态。
 
-### 1.2.2 ReplicaSet Control 循环示例
+#### 1.2.2 ReplicaSet Control 循环示例
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20210926104949.png)
 
 如图replicaset 控制器查看期望为3个副本，目前2个，所以执行动作增加一个副本。
 
-#### 1.2.2.1 POD 创建
+##### 1.2.2.1 POD 创建
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20210926105252.png)
 
@@ -68,7 +68,7 @@ B. 控制循环流程：
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20210926110636.png)
 
-#### 1.2.2.1 POD 销毁
+##### 1.2.2.2 POD 销毁
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20210926110754.png)
 
@@ -90,7 +90,7 @@ api-server负责资源crud，schedule负责资源调度，kubelet负责容器创
 
 
 
-## 1.3 事件
+### 1.3 事件
 
 什么时候控制器开始执行控制循环呢，Event是非常关键的因素，例如：Added、Modifie、Deleted，Error...
 
@@ -98,7 +98,7 @@ api-server负责资源crud，schedule负责资源调度，kubelet负责容器创
 
 事件触发在k8s中被分为两类，一个是Edge-driven Triggers(边缘触发)，Level-driven Triggers(水平触发)。
 
-### 1.3.1 边缘触发
+#### 1.3.1 边缘触发
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20210926113200.png)
 
@@ -110,7 +110,7 @@ api-server负责资源crud，schedule负责资源调度，kubelet负责容器创
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20210926114129.png)
 
-### 1.3.2 水平触发
+#### 1.3.2 水平触发
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20210926113216.png)
 
@@ -118,15 +118,15 @@ api-server负责资源crud，schedule负责资源调度，kubelet负责容器创
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20210926135939.png)
 
-## 1.4 控制器的组件
+### 1.4 控制器的组件
 
-### 1.4.1 术语表
+#### 1.4.1 术语表
 
 * Kind：API 对象的种类，例如deployment，service。
 * Resource：kind中资源的实体，被作为http endpoint，以小写或复数形式表示。
 * Object：API 对象的实体，被持久化存储在etcd中。
 
-### 1.4.2 控制器的库
+#### 1.4.2 控制器的库
 
 * Client-go：
   * informer
@@ -137,14 +137,14 @@ api-server负责资源crud，schedule负责资源调度，kubelet负责容器创
   * scheme
 * Code-generator
 
-### 1.4.3 自定义控制器SDK
+#### 1.4.3 自定义控制器SDK
 
 * 框架：kubebuilder、Operator SDK
 * 高级库：controller-runtime、controller-tools
 * 低级库：client-go、api-machinery
 * 组件：informer、lister、workqueue、scheme、runtime.Object
 
-### 1.4.4 控制器的库
+#### 1.4.4 控制器的库
 
 * Client-go：
   * kubernetes 官方client库。
@@ -155,7 +155,7 @@ api-server负责资源crud，schedule负责资源调度，kubelet负责容器创
 * Code-generator：
   * informer，lister，clientset，deepcopy 源码生成，使用这个进行控制器开发。
 
-### 1.4.5 控制器下的组件
+#### 1.4.5 控制器下的组件
 
 * Informer：watch 对象事件和超难吃数据在内存缓存中。
 * Lister：吸收对象数据在内存缓存中。
@@ -163,9 +163,9 @@ api-server负责资源crud，schedule负责资源调度，kubelet负责容器创
 * runtime.Object：API 对象接口。
 * Scheme：联系go type 和kubernetes API。
 
-# 二 低层架构-client-go
+## 二 低层架构-client-go
 
-## 2.1 Informer
+### 2.1 Informer
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20210926163457.png)
 
@@ -201,7 +201,7 @@ func main() {
 }
 ```
 
-### 2.1.1 Shared Informer
+#### 2.1.1 Shared Informer
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20210926165524.png)
 
@@ -209,7 +209,7 @@ func main() {
 
 共享informer 共享相同的资源在一个单独的二进制文件中。
 
-### 2.1.2 Informer 和workqueue
+#### 2.1.2 Informer 和workqueue
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20210926171048.png)
 
@@ -223,7 +223,7 @@ func main() {
 8. 进程获取key，process item
 9. 获取对象的key从indexer reference中。
 
-### 2.1.3 Informer 详解
+#### 2.1.3 Informer 详解
 
 Informer 整体架构
 
@@ -264,7 +264,7 @@ Informer 整体架构
 * Store：存储对象
 * Lister：获取对象在内存通过index
 
-## 2.2 WorkQueue
+### 2.2 WorkQueue
 
 WorkQueue不同于DeltaFIFO队列，
 
@@ -276,7 +276,7 @@ WorkQueue是使用存储Contrl Loop 的item。
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20210926193053.png)
 
-### 2.2.1 WorkQueue 简单代码
+#### 2.2.1 WorkQueue 简单代码
 
 ```go
 func main() {
@@ -309,7 +309,7 @@ log.Println("Added: " + key)
 }
 ```
 
-### 2.2.2 WorkQueue 详解
+#### 2.2.2 WorkQueue 详解
 
 整体示意图
 
@@ -343,7 +343,7 @@ log.Println("Added: " + key)
 
 5. 用户自定义的controller 逻辑从WorkQueue中获取对象进行处理。
 
-### 2.2.3 Informer Resync Period
+#### 2.2.3 Informer Resync Period
 
 Informer 重新同步周期
 
@@ -355,13 +355,13 @@ Informer监视api服务器上的对象事件。
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20210926200009.png)
 
-## 2.3 Controller Cycle Main Logic
+### 2.3 Controller Cycle Main Logic
 
 完整示意图：
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20210926200942.png)
 
-### 2.3.1 Controller Cycle
+#### 2.3.1 Controller Cycle
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20210926201017.png)
 
@@ -397,7 +397,7 @@ Informer监视api服务器上的对象事件。
 
 每次事件发生时，项都会继续存储在工作队列中,控制器处理工作队列中的项并执行协调。该循环持续不断，直到控制器停止。
 
-### 2.3.2 控制器基本策略
+#### 2.3.2 控制器基本策略
 
 从内存中读取，写向api-server。
 
@@ -417,7 +417,7 @@ ReplicaSets(rs.Namespace), rs, newStatus)
 
 
 
-### 2.3.3 控制器主逻辑
+#### 2.3.3 控制器主逻辑
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20210926203743.png)
 
@@ -425,7 +425,7 @@ ReplicaSets(rs.Namespace), rs, newStatus)
 * processNet WorkItem：操作WorkQueue(Get, Add)并且调用调谐逻辑。
 * syncHandler：这就是调谐具体逻辑。
 
-### 2.3.4 ReplicaSet Controller 源码
+#### 2.3.4 ReplicaSet Controller 源码
 
 基于K8s v1.16
 
@@ -433,7 +433,7 @@ ReplicaSets(rs.Namespace), rs, newStatus)
 * processNextWorkItem：https://github.com/kubernetes/kubernetes/blob/release-1.16/pkg/controller/replicaset/replica_set.go#L437
 * syncReplicaSet：https://github.com/kubernetes/kubernetes/blob/release-1.16/pkg/controller/replicaset/replica_set.go#L562
 
-# 其他
+## 其他
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20210927111215.png)
 
@@ -443,7 +443,7 @@ Informer 从etcd 同步对象数据到内存中。
 
 这是没有问题的，对象有resourceVersion，如果etcd的resourceVersion 于内存缓存中的resourceVersion不同，Controller在更新对象状态时出错，控制器请求调谐，直到迁移完成。
 
-# review
+## review
 
 * Informer：通过eventandler将Control Loop的项添加到WorkQueue中
 * Lister：通过Indexer从内存缓存中获取对象数据

@@ -168,10 +168,24 @@ nav:
       - cloud-native/develop/10-client-go之Indexer源码分析.md
       - cloud-native/develop/11-client-go之Workqueue源码分析.md
       - cloud-native/develop/12-自定义实现Controller.md
+      - cloud-native/develop/x-Informer实战之持久化K8s事件至ElasticSearch
     - 运维:
-      - other.md
+      - 工具:
+        - cloud-native/operator/tools/K8s 安全之Kube-bench.md
+        - cloud-native/operator/tools/kubescape安全
+      - 部署:
+        - cloud-native/operator/tools/快速部署最小化K8s环境之minikube.md
+        - cloud-native/operator/tools/最小化K8s环境部署之K3s
+
+      - 排错:
+        - cloud-native/operator/tools/k8s 集群etcd排错.md
+
     - 其他:
-      - other.md
+      - cloud-native/other/inside-kubernetes controller.md
+      - cloud-native/other/Kubectl插件开发及开业分享.md
+      - cloud-native/other/KubeEdge.md
+      - cloud-native/other/Kubernetes开发排错杂记.md
+      
   - devops:
     - GitLab CI:
       - devops/Gitlab CI/01敏捷无敌之实战Gitlab CI.md
