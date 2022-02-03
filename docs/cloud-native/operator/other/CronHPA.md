@@ -1,6 +1,6 @@
 # CronHPA初探
 
-# 一 背景
+## 一 背景
 
 在目前大部分互联网企业而言，应用的负载呈现明显的峰谷分布，有一定的规律可循，例如订餐应用，在中午12点，下午6点，以及晚上9点等呈现明显的峰值流量，其应用负载也达到最高，不通类型的业务更具长时间的监控数据以及业务用户画像，能够精确的预知应用的高峰期，一般对于应用资源的波峰和波谷之间相差3-4倍，而且波峰来临可能不是缓慢上升，而是瞬间负载拉满。
 
@@ -8,13 +8,15 @@
 
 在云原生中，容器的出现，可以让我们更加标准、轻量、自动的动态扩所容，在Kubernetes中，只用简单的修复replicase数即可完成，对于弹性扩所容只用定义HPA即可，根据不同的metric来动态调整副本数量，但是对于尖刺形的业务峰值，由于HPA中后端POD的拉起延迟，显然在这种场景是不能很好的满足用户需求。但是如果只是人工手动的提前扩展POD，对于这种周期性的业务显然也是不合理。
 
-# 二 方案
+## 二 方案
+
+### 2.1 HPA
 
 对于标准的 HPA 是基于指标阈值进行伸缩的，常见的指标主要是 CPU、内存，当然也可以通过自定义指标例如 QPS、连接数等进行伸缩。但是这里存在一个问题：基于资源的伸缩存在一定的时延，这个时延主要包含：采集时延(分钟级) + 判断时延(分钟级) + 伸缩时延(分钟级)。而对于上图中，我们可以发现负载的峰值毛刺还是非常尖锐的，这有可能会由于 HPA 分钟级别的伸缩时延造成负载数目无法及时变化，短时间内应用的整体负载飙高，响应时间变慢。特别是对于一些游戏业务而言，由于负载过高带来的业务抖动会造成玩家非常差的体验。
 
 为了解决这个场景，目前阿里提供了 `kube-cronhpa-controller`，专门应对资源画像存在周期性的场景。开发者可以根据资源画像的周期性规律，定义 time schedule，提前扩容好资源，而在波谷到来后定时回收资源。底层再结合 `cluster-autoscaler` 的节点伸缩能力，提供资源成本的节约。
 
-## 2.2 cronhpa
+### 2.2 CronHPA
 
 Cronhpa ，利用底层使用的是`go-cron`,因此支持更多的规则。
 
@@ -31,15 +33,15 @@ Cronhpa ，利用底层使用的是`go-cron`,因此支持更多的规则。
 
 `kubernetes-cronhpa-controller` is a kubernetes cron horizontal pod autoscaler controller using `crontab` like scheme. You can use `CronHorizontalPodAutoscaler` with any kind object defined in kubernetes which support `scale` subresource(such as `Deployment` and `StatefulSet`).
 
-# 三 安装部署
+## 三 安装部署
 
-## 3.1 下载相关资源
+### 3.1 下载相关资源
 
 ```yaml
 git clone https://github.com/AliyunContainerService/kubernetes-cronhpa-controller.git
 ```
 
-## 3.2 安装
+### 3.2 安装
 
 * install CRD
 
@@ -76,7 +78,7 @@ NAME                            DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 kubernetes-cronhpa-controller   1         1         1            1           49s
 ```
 
-# 四 测试
+## 四 测试
 
 进入examples folder目录
 
@@ -161,11 +163,11 @@ Events:
 
 在这个例子中，设定的是每分钟的第 0 秒扩容到 3 个 Pod，每分钟的第 30s 缩容到 1 个 Pod。如果执行正常，我们可以在 30s 内看到负载数目的两次变化。可以通过查看pod的增加和缩减情况，可以使得我们可以更容易的来定时控制POD数量，从而在波段性业务中，最大效率利用资源。
 
-# 五 反思
+## 五 反思
 
 目前对于无状态应用可以配合HPA，或CronHPA来应对横向扩展的压力，对于有状态应用，可借助Vertical Pod Autoscaler（VPA）来进行实现，根据业务用户画像，精确的预估容量水位，最小化的成本来自动化的满足业务需求。
 
-# 参考链接
+## 参考链接
 
   * https://www.lagou.com/lgeduarticle/8604.html
 * https://github.com/AliyunContainerService/kubernetes-cronhpa-controller

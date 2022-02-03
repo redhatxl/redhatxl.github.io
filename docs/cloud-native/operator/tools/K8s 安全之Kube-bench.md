@@ -1,6 +1,6 @@
-# K8s 安全至Kube-bench
+# K8s 安全之Kube-bench
 
-# 一 简介
+## 一 简介
 
 Kube-Bench是一款针对Kubernete的安全检测工具，从本质上来说，Kube-Bench是一个基于Go开发的应用程序，它可以帮助研究人员对部署的Kubernete进行安全检测，安全检测原则遵循[CIS Kubernetes Benchmark](https://www.cisecurity.org/benchmark/kubernetes/)。
 
@@ -8,9 +8,9 @@ Kube-Bench是一款针对Kubernete的安全检测工具，从本质上来说，K
 
 https://github.com/aquasecurity/kube-bench#download-and-install-binaries
 
-# 二 使用
+## 二 使用
 
-## 2.1 安装部署
+### 2.1 安装部署
 
 * 直接二进制安装
 
@@ -20,9 +20,9 @@ https://github.com/aquasecurity/kube-bench#download-and-install-binaries
 [root@master software]# mv kube-bench /usr/bin/
 ```
 
-## 2.2 安全检测
+### 2.2 安全检测
 
-### 2.1.1 检测master组件
+#### 2.1.1 检测master组件
 
 ```shell
 
@@ -222,7 +222,7 @@ on the master node and ensure the correct value for the --bind-address parameter
 0 checks INFO
 ```
 
-### 2.1.2 检测node组件
+#### 2.1.2 检测node组件
 
 ```shell
 [root@master software]# kube-bench --config-dir /data/software/kube-bench/cfg --config /data/software/kube-bench/cfg/config.yaml node
@@ -323,7 +323,7 @@ systemctl restart kubelet.service
 0 checks INFO
 ```
 
-# 三 支持版本
+## 三 支持版本
 
 Kube-Bench支持的Kubernete测试规则定义在CIS Kubernetes Benchmark之中：
 
@@ -336,17 +336,17 @@ Kube-Bench支持的Kubernete测试规则定义在CIS Kubernetes Benchmark之中�
 | [EKS 1.0.0](https://workbench.cisecurity.org/benchmarks/5190) | eks-1.0                | EKS                    |
 | Red Hat OpenShift hardening guide                            | rh-0.7                 | OCP 3.10-3.11          |
 
-# 四 注意事项
+## 四 注意事项
 
 - Kube-Bench尽可能地实现了[CIS Kubernetes Benchmark](https://www.cisecurity.org/benchmark/kubernetes/)，如果kube bench没有正确执行安全基准测试。
 - Kubernete版本和CIS基准测试版本之间没有一对一的映射。，以查看基准测试的不同版本包含哪些Kubernetes版本。
 - Kube-Bench无法检查受管集群的主节点，例如GKE、EKS和AKS，因为Kube-Bench不能访问这些节点。不过，Kube-Bench在这些环境中仍然可以检查worker节点配置。
 
-# 五 反思
+## 五 反思
 
 使用kube-bench可以快速的检测k8s中存在的问题，可以针对修复意见进行修复，配合自定义定时任务，可以自己根据数据生成报表，邮件或其他通信软件通知，及时获取集群安全状态。
 
-# 参考链接
+## 参考链接
 
 * https://www.cisecurity.org/benchmark/kubernetes/
 
