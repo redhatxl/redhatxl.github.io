@@ -9,11 +9,11 @@
 
 
         - [GitHub](https://github.com/redhatxl)
-
+    
         - [掘金](https://juejin.im/user/5c36033fe51d456e4138b473/posts)
-
+    
         - [慕课网](https://www.imooc.com/u/1260704)
-
+    
         - [51CTO](https://blog.51cto.com/kaliarch)
 
 
@@ -22,5 +22,8 @@
 !!!info
 
         - [awesome-kubernetes-notes](https://github.com/overnote/awesome-kubernetes-notes)
-
+    
         - [kubectl-img](https://github.com/redhatxl/kubectl-img)
+## Blog
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220204194001.png)
