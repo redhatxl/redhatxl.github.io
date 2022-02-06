@@ -57,7 +57,7 @@ type Interface interface {
 }
 ```
 
-#### 3.1.2 队列具体实现
+#### 3.1.2 队列实现
 
 通用队列具体实现为Type，其中有非常重要的三个属性，queue为一个任意类型元素的slice，是具体存储元素的地方，其实一个；dirty表示元素在内存中，可以对元素进行去重；processing表示当前正在处理中的元素。
 
@@ -90,7 +90,7 @@ type t interface{}
 type set map[t]empty
 ```
 
-#### 3.1.3 具体方法
+#### 3.1.3 通用队列方法
 
 * Add
 
@@ -177,17 +177,223 @@ func (q *Type) Done(item interface{}) {
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220204193947.png)
 
-
-
-
+可以看到，在正常处理1元素时候，新添加进来的1不会立即被存入到queue中，而是待processing中1标记Done的时候，再将其插入到queue中，进行后续处理，注意dirty和processing都是Hash Map类型，其不用考虑无序，只保证去重即可。
 
 ### 3.2 延迟队列
+
+#### 3.2.1 延迟队列接口
+
+该接口涉及的目的就是可以避免某些失败的`items`陷入热循环. 因为某些`item`在出队列进行处理有可能失败, 失败了用户就有可能将该失败的`item`重新进队列, 如果短时间内又出队列有可能还是会失败(因为短时间内整个环境可能没有改变等等), 所以可能又重新进队列等等, 因此陷入了一种`hot-loop`.
+所以就为用户提供了`AddAfter`方法, 可以允许用户告诉`DelayingInterface`过多长时间把该`item`加入队列中.
+
+```go
+type DelayingInterface interface {
+	Interface
+  // 在此刻过duration时间后再加入到queue中 
+	AddAfter(item interface{}, duration time.Duration)
+}
+
+```
+
+#### 3.2.2 延迟队列实现
+
+延迟队列的实现为delayingType，其继承了通用接口，在其基础上主要新增了waitingForAddCh字段，来实现延迟的功能
+
+waitingForAddCh：其默认初始大小为 1000，通过 AddAfter 方法插入元素时，是非阻塞状态的，只有当插入的元素大于或等于 1000 时，延迟队列才会处于阻塞状态。waitingForAddCh 字段中的数据通过 goroutine 运行的 waitingLoop 函数持久运行。
+
+waitFor: 保存了包括数据`data`和该`item`什么时间起(`readyAt`)就可以进入队列了.
+waitForPriorityQueue:waitForPriorityQueue 为 waitFor 项目实现优先级队列，是用于保存`waitFor`的优先队列, 按`readyAt`时间从早到晚排序，形成一个优先级队列， 先`ready`的`item`先出队列.
+
+```go
+type delayingType struct {
+	Interface
+
+	// clock tracks time for delayed firing
+	clock clock.Clock
+
+	// stopCh lets us signal a shutdown to the waiting loop
+	stopCh chan struct{}
+  // 保证仅仅发送一次关闭信号
+	stopOnce sync.Once
+
+  // 在触发之前确保等待的时间不超过maxWait
+	heartbeat clock.Ticker
+
+  // waitingForAddCh是一个缓冲channel
+	waitingForAddCh chan *waitFor
+
+	// 记录重试次数
+	metrics retryMetrics
+}
+
+// 保存了包括数据`data`和该`item`什么时间起(`readyAt`)就可以进入队列了.
+type waitFor struct {
+	data    t
+	readyAt time.Time
+	// index in the priority queue (heap)
+	index int
+}
+// waitForPriorityQueue 为 waitFor 项目实现优先级队列
+// 是用于保存`waitFor`的优先队列, 按`readyAt`时间从早到晚排序. 先`ready`的`item`先出队列.
+type waitForPriorityQueue []*waitFor
+```
+
+#### 3.2.3 延迟队列方法
+
+* AddAfter
+
+AddAfter方法为延迟队列添加元素，除了具体元素外，还需要传入延迟多长时间。
+
+```go
+func (q *delayingType) AddAfter(item interface{}, duration time.Duration) {
+	// don't add if we're already shutting down
+	if q.ShuttingDown() {
+		return
+	}
+
+	q.metrics.retry()
+
+	// 如果传入的时间小于等于0则立即添加
+	if duration <= 0 {
+		q.Add(item)
+		return
+	}
+
+
+	select {
+	case <-q.stopCh:
+		// unblock if ShutDown() is called
+    // 构造一个waitFor对象传入到waitingForAddCh通道中
+	case q.waitingForAddCh <- &waitFor{data: item, readyAt: q.clock.Now().Add(duration)}:
+	}
+}
+```
+
+* waitingLoop
+
+waitingLoop 方法一直运行到工作队列关闭，并检查要添加的项目列表，利用channel(q.waitingForAddCh)一直接受从AddAfter过来的waitFor，将已经ready的item添加到队列中。
+
+
+
+```go
+func (q *delayingType) waitingLoop() {
+	defer utilruntime.HandleCrash()
+
+	// Make a placeholder channel to use when there are no items in our list
+	never := make(<-chan time.Time)
+
+	// Make a timer that expires when the item at the head of the waiting queue is ready
+	var nextReadyAtTimer clock.Timer
+
+	waitingForQueue := &waitForPriorityQueue{}
+	heap.Init(waitingForQueue)
+
+	waitingEntryByData := map[t]*waitFor{}
+
+	for {
+		if q.Interface.ShuttingDown() {
+			return
+		}
+
+		now := q.clock.Now()
+
+		// Add ready entries
+		for waitingForQueue.Len() > 0 {
+			entry := waitingForQueue.Peek().(*waitFor)
+			if entry.readyAt.After(now) {
+				break
+			}
+
+			entry = heap.Pop(waitingForQueue).(*waitFor)
+			q.Add(entry.data)
+			delete(waitingEntryByData, entry.data)
+		}
+
+		// Set up a wait for the first item's readyAt (if one exists)
+		nextReadyAt := never
+		if waitingForQueue.Len() > 0 {
+			if nextReadyAtTimer != nil {
+				nextReadyAtTimer.Stop()
+			}
+			entry := waitingForQueue.Peek().(*waitFor)
+			nextReadyAtTimer = q.clock.NewTimer(entry.readyAt.Sub(now))
+			nextReadyAt = nextReadyAtTimer.C()
+		}
+
+		select {
+		case <-q.stopCh:
+			return
+
+		case <-q.heartbeat.C():
+			// continue the loop, which will add ready items
+
+		case <-nextReadyAt:
+			// continue the loop, which will add ready items
+
+		case waitEntry := <-q.waitingForAddCh:
+			if waitEntry.readyAt.After(q.clock.Now()) {
+				insert(waitingForQueue, waitingEntryByData, waitEntry)
+			} else {
+				q.Add(waitEntry.data)
+			}
+
+			drained := false
+			for !drained {
+				select {
+				case waitEntry := <-q.waitingForAddCh:
+					if waitEntry.readyAt.After(q.clock.Now()) {
+						insert(waitingForQueue, waitingEntryByData, waitEntry)
+					} else {
+						q.Add(waitEntry.data)
+					}
+				default:
+					drained = true
+				}
+			}
+		}
+	}
+}
+
+// 添加进队列中
+func insert(q *waitForPriorityQueue, knownEntries map[t]*waitFor, entry *waitFor) {
+	// if the entry already exists, update the time only if it would cause the item to be queued sooner
+	existing, exists := knownEntries[entry.data]
+	if exists {
+		if existing.readyAt.After(entry.readyAt) {
+			existing.readyAt = entry.readyAt
+			heap.Fix(q, existing.index)
+		}
+
+		return
+	}
+
+	heap.Push(q, entry)
+	knownEntries[entry.data] = entry
+}
+
+```
+
+
+
+
 
 
 
 
 
 ### 3.3 限速队列
+
+#### 3.3.1 限速队列接口
+
+
+
+
+
+#### 3.3.2 限速队列实现
+
+
+
+#### 3.3.3 限速队列方法
 
 ## 
 
