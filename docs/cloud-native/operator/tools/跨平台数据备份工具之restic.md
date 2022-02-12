@@ -200,8 +200,8 @@ restic -o s3.bucket-lookup=dns -o oss-cn-beijing.aliyuncs.com -r s3:https://xuel
 * 创建repository
 
 ```shell
-export AWS_ACCESS_KEY_ID=LTAI4Fd9eKBo1daUHS7RdZa9
-export AWS_SECRET_ACCESS_KEY=XvHrpwKRuvNzaSoloExRU3fYJt3wb7
+export AWS_ACCESS_KEY_ID=xxxxxxxxxxxxxxxxxxx
+export AWS_SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxxxxx
 restic -o s3.bucket-lookup=dns -o s3.region=oss-cn-beijing.aliyuncs.com -r s3:https://xueltestoss.oss-cn-beijing.aliyuncs.com/xueltestoss init
 ```
 
