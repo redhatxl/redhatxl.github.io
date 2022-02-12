@@ -168,28 +168,48 @@ nav:
       - cloud-native/develop/10-client-go之Indexer源码分析.md
       - cloud-native/develop/11-client-go之Workqueue源码分析.md
       - cloud-native/develop/12-自定义实现Controller.md
-      - cloud-native/develop/x-Informer实战之持久化K8s事件至ElasticSearch
+      - cloud-native/develop/13-认识CRD.md
+      - cloud-native/develop/x-Informer实战之持久化K8s事件至ElasticSearch.md
     - 运维:
       - 工具:
         - cloud-native/operator/tools/K8s 安全之Kube-bench.md
         - cloud-native/operator/tools/kubescape安全.md
+        - cloud-native/operator/tools/kubecolor.md
+        - cloud-native/operator/tools/K8s 网络抓包之sniff.md
+        - cloud-native/operator/tools/K8s日志查看神器之kubetail.md
+        - cloud-native/operator/tools/K9s.md
+        - cloud-native/operator/tools/k8s 插件管理工具之krew.md
       - 部署:
         - cloud-native/operator/deploy/最小化K8s环境之minikube.md
-        - cloud-native/operator/deploy/最小化K8s环境部署之K3s
+        - cloud-native/operator/deploy/最小化K8s环境部署之K3s.md
         - cloud-native/operator/deploy/最小化K8s环境部署之Kind.md
-        - cloud-native/operator/deploy/最小化K8s环境部署之Kind.md
-
+        - cloud-native/operator/deploy/最小化K8s环境部署之MicroK8s.md
+      - servicemesh:
+        - istio:
+          - cloud-native/servicemesh/istio/Istio笔记之pilot.md
+          - cloud-native/servicemesh/istio/Envoy笔记.md
+          - cloud-native/servicemesh/istio/istio之流量管理.md
 
       - 排错:
         - cloud-native/operator/other/k8s 集群etcd排错.md
-        - cloud-native/operator/other/Kubernetes开发排错杂记.md
-        - cloud-native/operator/other/inside-kubernetes controller
-
+        - cloud-native/operator/other/CronHPA.md
+        - cloud-native/operator/other/记一次K8smaster 节点一次排错实战.md
+        - cloud-native/operator/other/记一次线上k8s节点维护.md
+      - 容器:
+        - cloud-native/容器/Dockerfile 最佳实践.md
+        - cloud-native/容器/Docker底层原理.md
+        - cloud-native/容器/podman详解.md
+        - cloud-native/容器/利用katacoda 实现拉取国外镜像.md
+        - cloud-native/容器/镜像底层原理.md
     - 其他:
       - cloud-native/other/inside-kubernetes controller.md
       - cloud-native/other/Kubectl插件开发及开业分享.md
       - cloud-native/other/KubeEdge.md
       - cloud-native/other/Kubernetes开发排错杂记.md
+      - cloud-native/other/Kubernetes生成kubeconfig.md
+      - cloud-native/other/华为云原生CCE实战.md
+      - cloud-native/other/微服务API网关-Kong.md
+      - cloud-native/other/微服务架构中10种常用设计模式.md
       
   - devops:
     - GitLab CI:
@@ -198,7 +218,16 @@ nav:
       - devops/Gitlab CI/03实战Gitlab CI + Supervisor 发布Python项目.md
       - devops/Gitlab CI/04实战前后端项目及混合环境Gitlab CI.md
       - devops/Gitlab CI/05实战Gitlab CI + Kubernetes 代码发布.md
-    - 其他: other.md
+    - IaC:
+      - devops/IaC/Terraform/IaC扫描工具之Terrascan.md
+      - devops/IaC/Terraform/IaC测试工具之Terratest.md
+      - devops/IaC/Terraform/terraform-book.md
+      - devops/IaC/Terraform/Terraform相关概念及函数.md
+      - devops/IaC/Terraform/terraform最佳实践.md
+    - 其他: 
+      - devops/other/Argo CD.md
+      - devops/other/IaC之Terraform 与Pulumi使用对比.md
+      - devops/other/Packer.md
   - 开发技术:
     - 设计模式:
       - 创建型: 
@@ -226,4 +255,32 @@ nav:
         - develop/Golang/gin/gin框架优雅关机重启.md
 
       - 其他:
-        - develop/Golang/Golang 分布式链路最终之jaeger
+        - develop/Golang/golang 分布式链路最终之jaeger.md
+        - develop/Golang/golang 内存对齐.md
+  - Linux: 
+    - 系统相关:
+      - linux/system/Linux grub:grub2详解.md
+      - linux/system/Linux 内核引导详解.md
+      - linux/system/Linux系统安全加固最佳实践.md
+      - linux/system/virtio详解.md
+    - Shell:
+      - linux/shell/Shell简介.md
+      - linux/shell/1.第一个shell程序.md
+      - linux/shell/2.Shell变量.md
+      - linux/shell/3.Shell参数.md
+      - linux/shell/4.Shell数组.md
+      - linux/shell/5.Shell运算符.md
+      - linux/shell/6.Shell echo:printf命令.md
+      - linux/shell/7.Shell test命令.md
+      - linux/shell/8.Shell流程控制.md   
+      - linux/shell/9.Shell函数.md
+      - linux/shell/10.Shell输入:输出重定向.md
+      - linux/shell/11.Shell 正则表达式.md
+      - linux/shell/12.Shell 三剑客之grep.md
+      - linux/shell/13.Shell三剑客之sed.md
+      - linux/shell/14.Shell三剑客之awk.md
+      - linux/shell/15.Shell常用工具.md
+      - linux/shell/16.Shell实战项目.md
+  - 其他:
+    - 工具: other.md
+    - 杂记: other.md

@@ -273,21 +273,19 @@ func (q *delayingType) AddAfter(item interface{}, duration time.Duration) {
 
 waitingLoop 方法一直运行到工作队列关闭，并检查要添加的项目列表，利用channel(q.waitingForAddCh)一直接受从AddAfter过来的waitFor，将已经ready的item添加到队列中。
 
-
-
 ```go
 func (q *delayingType) waitingLoop() {
 	defer utilruntime.HandleCrash()
-
-	// Make a placeholder channel to use when there are no items in our list
+  // 创建一个占位channel，当list没有元素的时候，利用其实现等待
 	never := make(<-chan time.Time)
 
-	// Make a timer that expires when the item at the head of the waiting queue is ready
-	var nextReadyAtTimer clock.Timer
+	// 构造一个定时器，当等待队列头部的元素准备好后，该定时器失效
+  var nextReadyAtTimer clock.Timer
 
+  // 构造一个优先队列
 	waitingForQueue := &waitForPriorityQueue{}
 	heap.Init(waitingForQueue)
-
+	// 利用map实现去重，如果在此添加相同元素，仅实现更新时间
 	waitingEntryByData := map[t]*waitFor{}
 
 	for {
@@ -296,26 +294,31 @@ func (q *delayingType) waitingLoop() {
 		}
 
 		now := q.clock.Now()
-
-		// Add ready entries
+		// 如果优先队列有元素
 		for waitingForQueue.Len() > 0 {
 			entry := waitingForQueue.Peek().(*waitFor)
+      // 如果队列头部的元素时间已经大于现在时间，则表明整个优先级队列中的元素都大于当前时间，还没到插入元素的时间，则直接break
+      // 第一个元素时间是最小的
 			if entry.readyAt.After(now) {
 				break
 			}
-
+			// 否则说明以及改到了插入数据时间了，执行插入到通用队列中
 			entry = heap.Pop(waitingForQueue).(*waitFor)
 			q.Add(entry.data)
+      // 并从优先级队列删除
 			delete(waitingEntryByData, entry.data)
 		}
-
-		// Set up a wait for the first item's readyAt (if one exists)
+		// 当优先级队列中没有元素，则在后面进行等待
 		nextReadyAt := never
+    // 如果优先级队列中有元素
 		if waitingForQueue.Len() > 0 {
 			if nextReadyAtTimer != nil {
 				nextReadyAtTimer.Stop()
 			}
+      
+      // 获取第一个元素
 			entry := waitingForQueue.Peek().(*waitFor)
+      // 构造一个nextReady时间等待器
 			nextReadyAtTimer = q.clock.NewTimer(entry.readyAt.Sub(now))
 			nextReadyAt = nextReadyAtTimer.C()
 		}
@@ -323,20 +326,23 @@ func (q *delayingType) waitingLoop() {
 		select {
 		case <-q.stopCh:
 			return
-
+		// 定时器，如果过一段时间在没有任何数据，则进行一次大循环
 		case <-q.heartbeat.C():
 			// continue the loop, which will add ready items
 
 		case <-nextReadyAt:
 			// continue the loop, which will add ready items
 
+    // addAfter放入的元素从该处获取
 		case waitEntry := <-q.waitingForAddCh:
+      // 如果元素时间大于当前时间，则添加到优先级队列中
 			if waitEntry.readyAt.After(q.clock.Now()) {
 				insert(waitingForQueue, waitingEntryByData, waitEntry)
 			} else {
+        // 时间到了则添加进通用队列
 				q.Add(waitEntry.data)
 			}
-
+			// 将channel中的元素全部取出来
 			drained := false
 			for !drained {
 				select {
@@ -354,10 +360,11 @@ func (q *delayingType) waitingLoop() {
 	}
 }
 
-// 添加进队列中
+// 添加元素至优先级队列，如果元素相同则进行更新时间
 func insert(q *waitForPriorityQueue, knownEntries map[t]*waitFor, entry *waitFor) {
-	// if the entry already exists, update the time only if it would cause the item to be queued sooner
+	// 判断队列中是否已经存在该元素
 	existing, exists := knownEntries[entry.data]
+  // 如果存则，则直接更新元素
 	if exists {
 		if existing.readyAt.After(entry.readyAt) {
 			existing.readyAt = entry.readyAt
@@ -366,36 +373,268 @@ func insert(q *waitForPriorityQueue, knownEntries map[t]*waitFor, entry *waitFor
 
 		return
 	}
-
+	// 不存在则添加进优先级队列
 	heap.Push(q, entry)
 	knownEntries[entry.data] = entry
 }
 
 ```
 
-
-
-
-
-
-
-
+至此就完成了限速队列的源码分析，其在通用队列之上构造优先级队列，如果时间没到的添加到优先级队列中，待时间到了添加到通用队列中进行正常处理，其中优先级队列实现利用了golang底层库heap，又兴趣的可以进一步阅读源码。
 
 ### 3.3 限速队列
 
 #### 3.3.1 限速队列接口
 
+限速队列，顾名思义就是在元素入对速度有一定限制，其利用延迟队列的特性实现对元素插入队列的速度控制，因此限速队列也是扩展的延迟队列，新增有AddRateLimited、Forget、NumRequeues 3个方法。
 
+```go
+type RateLimitingInterface interface {
+	DelayingInterface
 
+	// 增加一个元素大限速队列
+	AddRateLimited(item interface{})
 
+  // 表示完成该元素重试，丢弃掉该元素
+	Forget(item interface{})
+
+	// 查询元素入队列的次数
+	NumRequeues(item interface{}) int
+}
+```
 
 #### 3.3.2 限速队列实现
 
+我们看其中主要还是调用rateLimiter 的接口方法，
+
+```go
+// rateLimitingType 是限速队列的具体实现
+type rateLimitingType struct {
+  // 继承延迟队列
+	DelayingInterface
+	// 新增限速接口
+	rateLimiter RateLimiter
+}
+
+// 获取到限速器延迟时间，然后加入到延迟队列
+func (q *rateLimitingType) AddRateLimited(item interface{}) {
+	q.DelayingInterface.AddAfter(item, q.rateLimiter.When(item))
+}
+
+// 通过限速器获取元素加入队列的次数
+func (q *rateLimitingType) NumRequeues(item interface{}) int {
+	return q.rateLimiter.NumRequeues(item)
+}
+
+// 通过限速器丢弃元素
+func (q *rateLimitingType) Forget(item interface{}) {
+	q.rateLimiter.Forget(item)
+}
+```
+
+#### 3.3.3 限速器方法
 
 
-#### 3.3.3 限速队列方法
 
-## 
+```go
+// 限速器接口
+type RateLimiter interface {
+	// 获取元素等待时间
+	When(item interface{}) time.Duration
+	// 释放指定元素
+	Forget(item interface{})
+	// 返回某个对象重新入队列次数
+	NumRequeues(item interface{}) int
+}
+```
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220206194921.png) 
+
+* BucketRateLimiter
+
+令牌桶算法是通过 Go 语言的第三方库 golang.org/x/time/rate 实现的。令牌桶算法内部实现了一个存放 token（令牌）的“桶”，初始时“桶”是空的，token 会以固定速率往“桶”里填充，直到将其填满为止，多余的 token 会被丢弃。每个元素都会从令牌桶得到一个 token，只有得到 token 的元素才允许通过（accept），而没有得到 token 的元素处于等待状态。令牌桶算法通过控制发放 token 来达到限速目的。
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220206212915.png)
+
+```go
+type BucketRateLimiter struct {
+	*rate.Limiter
+}
+
+
+func (r *BucketRateLimiter) When(item interface{}) time.Duration {
+	return r.Limiter.Reserve().Delay()
+}
+
+func (r *BucketRateLimiter) NumRequeues(item interface{}) int {
+	return 0
+}
+
+func (r *BucketRateLimiter) Forget(item interface{}) {
+}
+```
+
+在实例化 rate.NewLimiter 后，传入 r 和 b 两个参数，其中 r 参数表示每秒往“桶”里填充的 token 数量，b 参数表示令牌桶的大小（即令牌桶最多存放的 token 数量）。我们假定 r 为 10，b 为 100。假设在一个限速周期内插入了 1000 个元素，通过 r.Limiter.Reserve().Delay 函数返回指定元素应该等待的时间，那么前 b（即 100）个元素会被立刻处理，而后面元素的延迟时间分别为 item100/100ms、item101/200ms、item102/300ms、item103/400ms，以此类推。
+
+```go
+func DefaultControllerRateLimiter() RateLimiter {
+	return NewMaxOfRateLimiter(
+		NewItemExponentialFailureRateLimiter(5*time.Millisecond, 1000*time.Second),
+		// 10 qps, 100 bucket size.  This is only for retry speed and its only the overall factor (not per item)
+    // 默认令牌桶限速器
+		&BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(10), 100)},
+	)
+}
+```
+
+* ItemExponentialFailureRateLimiter
+
+排队指数算法将相同元素的排队数作为指数，排队数增大，速率限制呈指数级增长，但其最大值不会超过 maxDelay。元素的排队数统计是有限速周期的，一个限速周期是指从执行 AddRateLimited 方法到执行完 Forget 方法之间的时间。如果该元素被 Forget 方法处理完，则清空排队数。排队指数算法的核心实现代码示例如下：
+
+```go
+
+func (r *ItemExponentialFailureRateLimiter) When(item interface{}) time.Duration {
+	r.failuresLock.Lock()
+	defer r.failuresLock.Unlock()
+
+	exp := r.failures[item]
+	r.failures[item] = r.failures[item] + 1
+
+	// The backoff is capped such that 'calculated' value never overflows.
+	backoff := float64(r.baseDelay.Nanoseconds()) * math.Pow(2, float64(exp))
+	if backoff > math.MaxInt64 {
+		return r.maxDelay
+	}
+
+	calculated := time.Duration(backoff)
+	if calculated > r.maxDelay {
+		return r.maxDelay
+	}
+
+	return calculated
+}
+
+func (r *ItemExponentialFailureRateLimiter) NumRequeues(item interface{}) int {
+	r.failuresLock.Lock()
+	defer r.failuresLock.Unlock()
+
+	return r.failures[item]
+}
+
+func (r *ItemExponentialFailureRateLimiter) Forget(item interface{}) {
+	r.failuresLock.Lock()
+	defer r.failuresLock.Unlock()
+
+	delete(r.failures, item)
+}
+```
+
+failures 字段用于统计元素排队数，每当 AddRateLimited 方法插入新元素时，会为该字段加 1；另外，baseDelay 字段是最初的限速单位（默认为 5ms），maxDelay 字段是最大限速单位（默认为 1000s）
+
+限速队列利用延迟队列的特性，延迟多个相同元素的插入时间，达到限速目的。
+
+我们假定 baseDelay 是 1 * time.Millisecond，maxDelay 是 1000 * time.Second。假设在一个限速周期内通过 AddRateLimited 方法插入 10 个相同元素，那么第 1 个元素会通过延迟队列的 AddAfter 方法插入并设置延迟时间为 1ms（即 baseDelay），第 2 个相同元素的延迟时间为 2ms，第 3 个相同元素的延迟时间为 4ms，第 4 个相同元素的延迟时间为 8ms，第 5 个相同元素的延迟时间为 16ms……第 10 个相同元素的延迟时间为 512ms，最长延迟时间不超过 1000s（即 maxDelay）。
+
+* ItemFastSlowRateLimiter
+
+计数器算法是限速算法中最简单的一种，其原理是：限制一段时间内允许通过的元素数量，例如在 1 分钟内只允许通过 100 个元素，每插入一个元素，计数器自增 1，当计数器数到 100 的阈值且还在限速周期内时，则不允许元素再通过。但 WorkQueue 在此基础上扩展了 fast 和 slow 速率。
+
+
+
+计数器算法提供了 4 个主要字段：failures、fastDelay、slowDelay 及 maxFastAttempts。其中，failures 字段用于统计元素排队数，每当 AddRateLimited 方法插入新元素时，会为该字段加 1；而 fastDelay 和 slowDelay 字段是用于定义 fast、slow 速率的；另外，maxFastAttempts 字段用于控制从 fast 速率转换到 slow 速率。计数器算法核心实现的代码示例如下：
+
+```go
+type ItemFastSlowRateLimiter struct {
+	failuresLock sync.Mutex
+	failures     map[interface{}]int
+
+	maxFastAttempts int
+	fastDelay       time.Duration
+	slowDelay       time.Duration
+}
+
+func (r *ItemFastSlowRateLimiter) When(item interface{}) time.Duration {
+	r.failuresLock.Lock()
+	defer r.failuresLock.Unlock()
+
+	r.failures[item] = r.failures[item] + 1
+
+	if r.failures[item] <= r.maxFastAttempts {
+		return r.fastDelay
+	}
+
+	return r.slowDelay
+}
+
+func (r *ItemFastSlowRateLimiter) NumRequeues(item interface{}) int {
+	r.failuresLock.Lock()
+	defer r.failuresLock.Unlock()
+
+	return r.failures[item]
+}
+
+func (r *ItemFastSlowRateLimiter) Forget(item interface{}) {
+	r.failuresLock.Lock()
+	defer r.failuresLock.Unlock()
+
+	delete(r.failures, item)
+}
+
+```
+
+
+
+假设 fastDelay 是 5 * time.Millisecond，slowDelay 是 10 * time.Second，maxFastAttempts 是 3。在一个限速周期内通过 AddRateLimited 方法插入 4 个相同的元素，那么前 3 个元素使用 fastDelay 定义的 fast 速率，当触发 maxFastAttempts 字段时，第 4 个元素使用 slowDelay 定义的 slow 速率。
+
+* MaxOfRateLimiter
+
+```go
+type MaxOfRateLimiter struct {
+	limiters []RateLimiter
+}
+func (r *MaxOfRateLimiter) When(item interface{}) time.Duration {
+	ret := time.Duration(0)
+	for _, limiter := range r.limiters {
+		curr := limiter.When(item)
+		if curr > ret {
+			ret = curr
+		}
+	}
+
+	return ret
+}
+
+func (r *MaxOfRateLimiter) NumRequeues(item interface{}) int {
+	ret := 0
+	for _, limiter := range r.limiters {
+		curr := limiter.NumRequeues(item)
+		if curr > ret {
+			ret = curr
+		}
+	}
+
+	return ret
+}
+
+func (r *MaxOfRateLimiter) Forget(item interface{}) {
+	for _, limiter := range r.limiters {
+		limiter.Forget(item)
+	}
+}
+
+```
+
+混合模式是将多种限速算法混合使用，即多种限速算法同时生效。例如，同时使用排队指数算法和令牌桶算法，代码示例如下：
+
+```go
+func DefaultControllerRateLimiter() RateLimiter {
+	return NewMaxOfRateLimiter(
+		NewItemExponentialFailureRateLimiter(5*time.Millisecond, 1000*time.Second),
+		// 10 qps, 100 bucket size.  This is only for retry speed and its only the overall factor (not per item)
+		&BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(10), 100)},
+	)
+}
+```
 
 
 

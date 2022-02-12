@@ -1,4 +1,4 @@
-# k8s 集群etcd排错
+## k8s 集群etcd排错
 
 
 
@@ -101,22 +101,6 @@ ip tunnel del tunl0
 ip tunnel show
 ―-还是看到了tunl0好端端的在那里
 
-google了下别人遇到这种问题怎么解决吧，晕，没有一个可行的。
-―――――-华丽的救命线―――――――
-最后啊，看了下我加载了哪些模块吧
-lsmod
-―-嗯，看到了模块ipip
-好，卸载该模块
-modprobe -r ipip
-lsmod
-―-不错，ipip被卸载了
-ip tunnel show
-―-哇，竟然tunl0不见了
-/sbin/ifconfig -a
-―-tunl0也看不到了
-ping VIP
-―-再也ping不通了
-OK 到此为止
 ```
 
 

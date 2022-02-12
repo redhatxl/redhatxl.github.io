@@ -24,6 +24,8 @@
         - [awesome-kubernetes-notes](https://github.com/overnote/awesome-kubernetes-notes)
     
         - [kubectl-img](https://github.com/redhatxl/kubectl-img)
+
+        - [shell-scripts](https://github.com/daily-scripts/shell-scripts)
 ## Blog
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220204194001.png)
