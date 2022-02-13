@@ -188,7 +188,8 @@ nav:
         - istio:
           - cloud-native/servicemesh/istio/Istio笔记之pilot.md
           - cloud-native/servicemesh/istio/Envoy笔记.md
-          - cloud-native/servicemesh/istio/istio之流量管理.md
+          - cloud-native/servicemesh/istio/Istio之流量管理.md
+          - cloud-native/servicemesh/istio/Istio之XDS协议解析.md
 
       - 排错:
         - cloud-native/operator/other/k8s 集群etcd排错.md

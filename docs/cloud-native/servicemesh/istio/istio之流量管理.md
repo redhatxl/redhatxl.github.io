@@ -1,6 +1,6 @@
-# istio之流量管理
+#### Istio之流量管理
 
-# 一 概述
+## 一 概述
 
 Istio的流量路由规则使您可以轻松控制服务之间的流量和API调用。Istio简化了诸如断路器，超时和重试之类的服务级别属性的配置，并使其易于设置重要任务（如A / B测试，canary部署和基于百分比的流量拆分的分段部署）。它还提供了开箱即用的故障恢复功能，有助于使您的应用程序更强大，以防止相关服务或网络的故障。
 
@@ -16,11 +16,11 @@ Istio的流量管理模型依赖于 随服务一起部署的Envoy代理。网状
 
 与其他Istio配置一样，使用Kubernetes自定义资源定义（CRD）指定API ，您可以使用YAML对其进行配置，如示例所示。
 
-# 二 Virtual services
+## 二 Virtual services
 
 [虚拟服务](https://istio.io/docs/reference/config/networking/v1alpha3/virtual-service/#VirtualService)以及[目标规则](https://istio.io/docs/concepts/traffic-management/#destination-rules)是Istio流量路由功能的关键构建块。虚拟服务使您可以在Istio和您的平台提供的基本连接和发现的基础上，配置如何将请求路由到Istio服务网格中的服务。每个虚拟服务由一组路由规则组成，这些路由规则按顺序进行评估，从而使Istio将对虚拟服务的每个给定请求匹配到网格内特定的实际目的地。您的网格可能需要多个虚拟服务，也可能不需要多个虚拟服务，具体取决于您的用例。
 
-## 2.1 为什么使用Virtual services
+### 2.1 为什么使用Virtual services
 
 虚拟服务在使Istio的流量管理变得灵活和强大方面起着关键作用。他们通过将客户端从真正实现它们的目标工作负载中发送请求的位置之间去耦合，来实现这一点。虚拟服务还提供了一种丰富的方法来指定用于将流量发送到那些工作负载的不同流量路由规则。
 
@@ -37,7 +37,7 @@ Istio的流量管理模型依赖于 随服务一起部署的Envoy代理。网状
 
 在某些情况下，您还需要配置目标规则以使用这些功能，因为这些是您指定服务子集的位置。在单独的对象中指定服务子集和其他特定于目标的策略，使您可以在虚拟服务之间清晰地重用它们。您可以在下一部分中找到有关目标规则的更多信息。
 
-## 2.2 虚拟服务示例
+### 2.2 虚拟服务示例
 
 以下虚拟服务根据请求是否来自特定用户将请求路由到服务的不同版本。
 
@@ -64,7 +64,7 @@ spec:
         subset: v3
 ```
 
-### 2.2.1 主机字段
+#### 2.2.1 主机字段
 
 该`hosts`字段列出了虚拟服务的主机-换句话说，这些路由规则适用于用户可寻址的目的地。这是客户端向服务发送请求时使用的地址。
 
@@ -75,7 +75,7 @@ hosts:
 
 虚拟服务主机名可以是IP地址，DNS名称，也可以是短名称（例如Kubernetes服务短名称），具体取决于平台，后者可以隐式或显式地解析为完全限定的域名（FQDN）。您还可以使用通配符（“ *”）前缀，从而为所有匹配的服务创建一套路由规则。虚拟服务主机实际上不一定是Istio服务注册表的一部分，它们只是虚拟目的地。这样，您就可以为网格内没有可路由条目的虚拟主机的流量建模。
 
-### 2.2.2 路由规则
+#### 2.2.2 路由规则
 
 本`http`节包含虚拟服务的路由规则，描述了路由发送到主机字段中指定的目标的HTTP / 1.1，HTTP2和gRPC流量的匹配条件和操作（您还可以使用`tcp`和 `tls`部分来配置[TCP的](https://istio.io/docs/reference/config/networking/v1alpha3/virtual-service/#TCPRoute)路由规则 和未终止的 [TLS](https://istio.io/docs/reference/config/networking/v1alpha3/virtual-service/#TLSRoute) 流量）。路由规则由您希望流量流向的目的地以及零个或多个匹配条件组成，具体取决于您的用例。
 
@@ -107,7 +107,7 @@ route:
 
 Destination部分还指定要让符合此规则条件的请求转到此Kubernetes服务的哪个子集，在本例中为名为v2的子集。您将在下面有关[目标规则](https://istio.io/docs/concepts/traffic-management/#destination-rules)的部分中看到如何定义服务子集 。
 
-### 2.2.3 路由规则优先级
+#### 2.2.3 路由规则优先级
 
 路由规则**从上到下按顺序评估**，其中虚拟服务定义中的第一个规则具有最高优先级。在这种情况下，您希望不符合第一个路由规则的所有内容都转到第二个规则中指定的默认目标。因此，第二条规则没有匹配条件，仅将流量定向到v3子集。
 
@@ -120,7 +120,7 @@ Destination部分还指定要让符合此规则条件的请求转到此Kubernete
 
 我们建议在每个虚拟服务中提供默认的“无条件”或基于权重的规则（如下所述）作为每个虚拟服务中的最后一个规则，以确保到虚拟服务的流量始终具有至少一条匹配的路由。
 
-## 2.3 路由规则更多信息
+### 2.3 路由规则更多信息
 
 如上所述，路由规则是将流量的特定子集路由到特定目的地的强大工具。您可以在流量端口，标头字段，URI等上设置匹配条件。例如，此虚拟服务使用户可以将流量发送到两个单独的服务（评级和评论），就像他们是较大虚拟服务的一部分一样。`http://bookinfo.com/.`虚拟服务规则根据请求URI匹配流量，并将请求定向到适当的服务。
 
@@ -189,7 +189,7 @@ spec:
 
 要了解有关可用操作的更多信息，请参见 [`HTTPRoute`参考资料](https://istio.io/docs/reference/config/networking/v1alpha3/virtual-service/#HTTPRoute)。
 
-# 三 Destination rules
+## 三 Destination rules
 
 与[虚拟服务一起](https://istio.io/docs/concepts/traffic-management/#virtual-services)， [目的地规则](https://istio.io/docs/reference/config/networking/v1alpha3/destination-rule/#DestinationRule) 是Istio流量路由功能的关键部分。你能想到的虚拟服务，如何您将自己的流量**到**你指定的目的地，然后用目的地规则来配置发生了什么流量**为**那个目的地。在评估了虚拟服务路由规则之后，将应用目标规则，因此它们将应用于流量的“真实”目标。
 
@@ -197,7 +197,7 @@ spec:
 
 目标规则还允许您在调用整个目标服务或特定服务子集时自定义Envoy的流量策略，例如首选的负载平衡模型，TLS安全模式或断路器设置。您可以在“ [目标规则”参考中](https://istio.io/docs/reference/config/networking/v1alpha3/destination-rule/)看到目标规则选项的完整列表 。
 
-## 3.1 负载均衡器选项
+### 3.1 负载均衡器选项
 
 默认情况下，Istio使用循环负载平衡策略，其中实例池中的每个服务实例依次获得一个请求。Istio还支持以下模型，您可以在目标规则中为对特定服务或服务子集的请求指定这些模型。
 
@@ -207,7 +207,7 @@ spec:
 
 有关每个选项的更多信息，请参阅 [Envoy负载平衡文档](https://www.envoyproxy.io/docs/envoy/v1.5.0/intro/arch_overview/load_balancing)。
 
-## 3.2 目标规则示例
+### 3.2 目标规则示例
 
 以下示例目标规则`my-svc`使用不同的负载平衡策略为目标服务配置了三个不同的子集：
 
@@ -242,7 +242,7 @@ spec:
 
 除了定义子集外，此目标规则还具有针对此目标中所有子集的默认流量策略，以及针对该子集覆盖该子集的特定于子集的策略。在该`subsets` 字段上方定义的默认策略为`v1`和`v3`子集设置了一个简单的随机负载均衡器。在该 `v2`策略中，在相应子集的字段中指定了循环负载均衡器。
 
-# 四 Gateways
+## 四 Gateways
 
 您可以使用[网关](https://istio.io/docs/reference/config/networking/v1alpha3/gateway/#Gateway)来管理网格的入站和出站流量，让您指定要输入或离开网格的流量。网关配置适用于在网格边缘运行的独立Envoy代理，而不是与服务工作负载一起运行的sidecar Envoy代理。
 
@@ -252,7 +252,7 @@ spec:
 
 Istio提供了一些可以预配置的网关代理部署（`istio-ingressgateway`和`istio-egressgateway`），您可以使用-如果您使用我们的[演示安装](https://istio.io/docs/setup/install/kubernetes/)，则两者都将部署，而只有入口网关将使用我们的[默认配置文件或sds配置文件进行](https://istio.io/docs/setup/additional-setup/config-profiles/)部署 [。](https://istio.io/docs/setup/additional-setup/config-profiles/)您可以将自己的网关配置应用于这些部署，也可以部署和配置自己的网关代理。
 
-## 4.1 网关示例
+### 4.1 网关示例
 
 以下示例显示了用于外部HTTPS入口流量的可能网关配置：
 
@@ -295,7 +295,7 @@ spec:
 
 然后，您可以使用外部流量的路由规则配置虚拟服务。
 
-# 五 Service entries
+## 五 Service entries
 
 您使用 [服务条目](https://istio.io/docs/reference/config/networking/v1alpha3/service-entry/#ServiceEntry)将[条目](https://istio.io/docs/reference/config/networking/v1alpha3/service-entry/#ServiceEntry)添加到Istio内部维护的服务注册表中。添加服务条目后，Envoy代理可以将流量发送到服务，就好像它是网格中的服务一样。通过配置服务条目，您可以管理在网格外部运行的服务的流量，包括以下任务：
 
@@ -306,7 +306,7 @@ spec:
 
 您不需要为要使用网格服务的每个外部服务添加服务条目。默认情况下，Istio将Envoy代理配置为将请求传递给未知服务。但是，您不能使用Istio功能来控制流向未在网格中注册的目标的流量。
 
-## 5.1 服务输入示例
+### 5.1 服务输入示例
 
 以下示例mesh-external服务条目将`ext-resource` 外部依赖项添加到Istio的服务注册表中：
 
@@ -351,7 +351,7 @@ spec:
 
 有关 更多可能的配置选项，请参阅 [服务条目参考](https://istio.io/docs/reference/config/networking/v1alpha3/service-entry)。
 
-# 六 Sidecars
+## 六 Sidecars
 
 默认情况下，Istio将每个Envoy代理配置为在其相关工作负载的所有端口上接受流量，并在转发流量时到达网格中的每个工作负载。您可以使用[sidecar](https://istio.io/docs/reference/config/networking/v1alpha3/sidecar/#Sidecar)配置执行以下操作：
 
@@ -379,11 +379,11 @@ spec:
 
 
 
-# 七 Network resilience and testing
+## 七 Network resilience and testing
 
 除了帮助您引导网络中的流量外，Istio还提供了可以在运行时动态配置的可选故障恢复和故障注入功能。使用这些功能可以帮助您的应用程序可靠地运行，确保服务网格可以容忍出现故障的节点，并防止局部故障级联到其他节点。
 
-## 7.1 Timeouts
+### 7.1 Timeouts
 
 超时是Envoy代理应等待来自给定服务的答复的时间，以确保服务不会无限期地等待答复，并确保呼叫在可预测的时间内成功或失败。HTTP请求的默认超时为15秒，这意味着如果服务在15秒内未响应，则调用将失败。
 
@@ -405,7 +405,7 @@ spec:
     timeout: 10s
 ```
 
-## 7.2 Retries
+### 7.2 Retries
 
 重试设置指定如果初始调用失败，Envoy代理尝试连接到服务的最大次数。重试可以确保不会因暂时性问题（例如服务或网络暂时过载）而导致呼叫永久失败，从而提高服务可用性和应用程序性能。重试之间的间隔（25ms +）是可变的，并由Istio自动确定，以防止被调用的服务被请求所淹没。默认情况下，Envoy代理在第一次失败后不尝试重新连接到服务。
 
@@ -429,7 +429,7 @@ spec:
       perTryTimeout: 2s
 ```
 
-## 7.3 Circuit breakers
+### 7.3 Circuit breakers
 
 断路器是Istio提供的另一个有用的机制，可用于创建基于弹性微服务的应用程序。在断路器中，可以设置对服务内单个主机的呼叫限制，例如并发连接数或对该主机的呼叫失败次数。一旦达到该限制，断路器将“跳闸”并停止与该主机的进一步连接。使用断路器模式可实现快速故障，而不是使客户端尝试连接到过载或故障主机。
 
@@ -456,7 +456,7 @@ spec:
 
 您可以在[Circuit Breaking中](https://istio.io/docs/tasks/traffic-management/circuit-breaking/)找到有关创建断路器的更多信息 。
 
-## 7.4 Fault injection
+### 7.4 Fault injection
 
 配置完网络（包括故障恢复策略）后，可以使用Istio的故障注入机制来测试整个应用程序的故障恢复能力。故障注入是一种将错误引入系统的测试方法，以确保它可以承受并从错误情况中恢复。使用故障注入对确保您的故障恢复策略不是不兼容或限制过于严格可能特别有用，这可能会导致关键服务不可用。
 
@@ -493,19 +493,13 @@ spec:
 
 有关如何配置延迟和中止的详细说明，请参阅 [故障注入](https://istio.io/docs/tasks/traffic-management/fault-injection/)。
 
-## 7.5 处理您的应用程序
+### 7.5 处理您的应用程序
 
 Istio故障恢复功能对应用程序是完全透明的。应用程序不知道Envoy Sidecar代理在返回响应之前是否正在处理被调用服务的故障。这意味着，如果您还在应用程序代码中设置故障恢复策略，则需要记住两者都独立工作，因此可能会发生冲突。例如，假设您有两个超时，一个在虚拟服务中配置，另一个在应用程序中配置。应用程序为服务的API调用设置了2秒超时。但是，您在虚拟服务中配置了3秒超时和1次重试。在这种情况下，应用程序的超时首先开始，因此您的Envoy超时和重试尝试无效。
 
 尽管Istio故障恢复功能提高了网格中服务的可靠性和可用性，但应用程序必须处理故障或错误并采取适当的后备操作。例如，当负载平衡池中的所有实例都失败时，Envoy将返回一个`HTTP 503` 代码。应用程序必须实现处理`HTTP 503`错误代码所需的所有后备逻辑。
 
-
-
-
-
-
-
-# 八 bookinfo示例
+## 八 bookinfo示例
 
 * Service
 
@@ -701,7 +695,7 @@ spec:
 
 
 
-# 九 http-bin服务
+## 九 http-bin服务
 
 ```yaml
 [root@vm_0_2_centos ~]# kubectl get gateway
@@ -783,7 +777,7 @@ spec:
 
 ```
 
-# 十 tcp-echo服务
+## 十 tcp-echo服务
 
 ```yaml
 [root@vm_0_2_centos ~]# kubectl get gw
@@ -899,13 +893,7 @@ spec:
     name: v2
 ```
 
-
-
-
-
-
-
-# 参考链接
+## 参考链接
 
 * https://zhaohuabing.com/istio-practice/
 * https://skyao.io/learning-istio/introduction/information.html
