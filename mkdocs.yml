@@ -170,6 +170,7 @@ nav:
       - cloud-native/develop/12-自定义实现Controller.md
       - cloud-native/develop/13-认识CRD.md
       - cloud-native/develop/x-Informer实战之持久化K8s事件至ElasticSearch.md
+      - cloud-native/develop/x-DeltaFIFO和indexer 数据结构对比.md
     - 运维:
       - 工具:
         - cloud-native/operator/tools/K8s 安全之Kube-bench.md
