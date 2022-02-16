@@ -1,9 +1,13 @@
-## 1.1 概述
+# Ceph机器安装部署
+
+## 一 Ceph机器概述
+
+### 1.1 概述
 
 近期进行业务容器后改造，部署K8S需要为其提供存储，，在选型中本地存储不可跨node，NFS共享存储不好做高可用，因此选型Ceph来为k8s提供存储类，以备后用
 Ceph是一种为优秀的性能、可靠性和可扩展性而设计的统一的、分布式文件系统。Ceph是一个开源的分布式文件系统。因为它还支持块存储、对象存储，所以很自然的被用做云计算框架openstack或cloudstack整个存储后端。当然也可以单独作为存储，例如部署一套集群作为对象存储、SAN存储、NAS存储等。可以作为k8s的存储类，来方便容器持久化存储。
 
-## 1.2 支持格式
+### 1.2 支持格式
 
 * 对象存储：即radosgw,兼容S3接口。通过rest api上传、下载文件。
 
@@ -11,7 +15,7 @@ Ceph是一种为优秀的性能、可靠性和可扩展性而设计的统一的�
 
 * 块存储：即rbd。有kernel rbd和librbd两种使用方式。支持快照、克隆。相当于一块硬盘挂到本地，用法和用途和硬盘一样。比如在OpenStack项目里，Ceph的块设备存储可以对接OpenStack的后端存储
 
-## 1.3 优势
+### 1.3 优势
 
 * 统一存储：虽然ceph底层是一个分布式文件系统，但由于在上层开发了支持对象和块的接口
 
@@ -21,7 +25,7 @@ Ceph是一种为优秀的性能、可靠性和可扩展性而设计的统一的�
 
 * 高性能：因为是多个副本，因此在读写操作时候能够做到高度并行化。理论上，节点越多，整个集群的IOPS和吞吐量越高。另外一点ceph客户端读写数据直接与存储设备(osd) 交互。
 
-## 1.4 核心组件
+### 1.4 核心组件
 
 * Ceph OSDs:Ceph OSD 守护进程（ Ceph OSD ）的功能是存储数据，处理数据的复制、恢复、回填、再均衡，并通过检查其他OSD 守护进程的心跳来向 Ceph Monitors 提供一些监控信息。当 Ceph 存储集群设定为有2个副本时，至少需要2个 OSD 守护进程，集群才能达到 active+clean 状态（ Ceph 默认有3个副本，但你可以调整副本数）。
 
@@ -31,9 +35,9 @@ Ceph是一种为优秀的性能、可靠性和可扩展性而设计的统一的�
 
 
 
-# 二 安装部署
+## 二 安装部署
 
-## 2.1 主机信息
+### 2.1 主机信息
 
 | 主机名 | 操作系统         | 配置            | K8S组件 | CEPH组件       | 私网IP      | SSH端口 | 用户名密码            |
 | ------ | ---------------- | --------------- | ------- | -------------- | ----------- | ------- | --------------------- |
@@ -41,7 +45,7 @@ Ceph是一种为优秀的性能、可靠性和可扩展性而设计的统一的�
 | node01 | CentOS 7.4 64bit | 4C8G + 500G硬盘 |         | osd, mon       | 172.16.60.3 | 2002/22 | root/IZ5lReaUBz3QOkLh |
 | node02 | CentOS 7.4 64bit | 4C8G + 500G硬盘 |         | osd, mon       | 172.16.60.4 | 2003/22 | root/nUMFlg9a4zpzDMcE |
 
-## 2.2 磁盘准备
+### 2.2 磁盘准备
 
 需要在三台主机创建磁盘,并挂载到主机的/var/local/osd{0,1,2}
 
@@ -63,7 +67,7 @@ Ceph是一种为优秀的性能、可靠性和可扩展性而设计的统一的�
 
 ```
 
-## 2.3 配置各主机hosts文件
+### 2.3 配置各主机hosts文件
 
 ```shell
 127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
@@ -73,7 +77,7 @@ Ceph是一种为优秀的性能、可靠性和可扩展性而设计的统一的�
 172.16.60.4 node02
 ```
 
-## 2.4 管理节点ssh免密钥登录node1/node2
+### 2.4 管理节点ssh免密钥登录node1/node2
 
 ```shell
 [root@master ~]# ssh-keygen -t rsa
@@ -81,7 +85,7 @@ Ceph是一种为优秀的性能、可靠性和可扩展性而设计的统一的�
 [root@master ~]# ssh-copy-id -i /root/.ssh/id_rsa.pub root@node02
 ```
 
-## 2.5 master节点安装ceph-deploy工具
+### 2.5 master节点安装ceph-deploy工具
 
 ```shell
 # 各节点均更新ceph的yum源
@@ -108,7 +112,7 @@ yum clean all && yum makecache
 yum -y install ceph-deploy
 ```
 
-## 2.6 创建monitor服务
+### 2.6 创建monitor服务
 
 创建monitor服务,指定master节点的hostname
 
@@ -135,7 +139,7 @@ osd_pool_default_size = 2
 配置文件的默认副本数从3改成2，这样只有两个osd也能达到active+clean状态，把下面这行加入到[global]段（可选配置）
 ```
 
-## 2.7 所有节点安装ceph
+### 2.7 所有节点安装ceph
 
 ```shell
 # 各节点安装软件包
@@ -148,7 +152,7 @@ yum -y install yum-plugin-priorities epel-release
 ceph version 10.2.11 (e4b061b47f07f583c92a050d9e84b1813a35671e)
 ```
 
-## 2.8 部署相关服务
+### 2.8 部署相关服务
 
 ```shell
 # 安装ceph monitor
@@ -171,7 +175,7 @@ ceph version 10.2.11 (e4b061b47f07f583c92a050d9e84b1813a35671e)
 [root@master ceph]# ceph-deploy osd list master node01 node02
 ```
 
-## 2.9 统一配置
+### 2.9 统一配置
 
 用ceph-deploy把配置文件和admin密钥拷贝到所有节点，这样每次执行Ceph命令行时就无需指定monitor地址和ceph.client.admin.keyring了
 
@@ -200,7 +204,7 @@ HEALTH_OK
                       
 ```
 
-## 2.10 部署MDS服务
+### 2.10 部署MDS服务
 
 我们在node01/node02上安装部署MDS服务
 
@@ -230,9 +234,9 @@ ceph.target                                   enabled
 
 至此，基本上完成了ceph存储集群的搭建。 
 
-# 三 创建ceph文件系统
+## 三 创建ceph文件系统
 
-## 3.1 创建文件系统
+### 3.1 创建文件系统
 
 关于创建存储池
 确定 pg_num 取值是强制性的，因为不能自动计算。下面是几个常用的值：
@@ -302,7 +306,7 @@ client.bootstrap-rgw
 
 
 
-## 3.2 创建客户端密钥
+### 3.2 创建客户端密钥
 
 ```shell
 # 创建keyring
@@ -313,7 +317,7 @@ client.bootstrap-rgw
 [root@master ceph]# scp ceph.client.kube.keyring root@node01:/etc/ceph/
 ```
 
-## 3.3 部署进k8s
+### 3.3 部署进k8s
 
 ```yaml
 [root@master storageclass]# cat ceph-secret.yaml 
@@ -368,7 +372,7 @@ ceph-rdb   ceph.com/rbd   2m13s
 
 ·
 
-# 四 卸载
+## 四 卸载
 
 ```shell
 清理机器上的ceph相关配置：
@@ -383,15 +387,15 @@ ceph-rdb   ceph.com/rbd   2m13s
 
 
 
-# 五 Cephfs
+## 五 Cephfs
 
-## 5.1 背景
+### 5.1 背景
 
 因为上一篇文档中描述的使用RBD模式创建的pvc不支持RWM(readwriteMany)，只支持 RWO(ReadWriteOnce)和ROM(ReadOnlyMany)
 
 k8s 不支持跨节点挂载同一Ceph RBD，支持跨节点挂载 CephFS，让所有的任务都调度到指定node上执行，来保证针对RBD的操作在同一节点上。
 
-## 5.2 创建cephfs
+### 5.2 创建cephfs
 
 在ceph服务器创建cephfs文件系统
 
@@ -401,7 +405,7 @@ ceph osd pool create fs_kube_metadata 128
 ceph fs new cephfs fs_kube_metadata fs_kube_data
 ```
 
-## 5.3 cephf 作为k8s的storage class
+### 5.3 cephf 作为k8s的storage class
 
 官方支持storage class的存储类型里，目前没有cephfs。目前k8s（v1.10）的确是不支持cephfs用作storage class的，但是我们已经有了ceph集群，而RBD又不支持 ReadWriteMany，这样就没办法做共享存储类型的Volume了，使用场景会受一些限制。而为了这个场景再单独去维护一套glusterfs，又很不划算，当然是能用cephfs做storage class最完美啦。
   社区其实是有项目做这个的，就是 external storage，只是现在还在孵化器里。所谓external storage其实就是一个 controller，它会去监听 apiserver 的storage class api的变化，当发现有cephfs的请求，它会拿来处理：根据用户的请求，创建PV，并将PV的创建请求发给api server；PV创建后再将其与PVC绑定。
@@ -568,7 +572,7 @@ touch: cannot touch '1': Input/output error
 
 但是发现无法正常挂载，需要linux宿主机kernel版本4.10以上，可参考：https://github.com/kubernetes-incubator/external-storage/issues/345
 
-## 5.4 升级系统kernel
+### 5.4 升级系统kernel
 
 ```shell
 [root@master updatakernel]# rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
@@ -603,13 +607,7 @@ Linux 5.7.0-1.el7.elrepo.x86_64
 [root@master ~]# 
 ```
 
-
-
-
-
-
-
-# 参考链接
+## 参考链接
 
 * [ceph官方文档](http://docs.ceph.org.cn/) 
 * [ceph中文开源社区]( http://ceph.org.cn/)

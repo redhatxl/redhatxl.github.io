@@ -1,6 +1,6 @@
 # 架构图神器DaC之Diagram
 
-# 一 背景
+## 一 背景
 
 通过图可以用 Python 代码绘制云系统架构。它的诞生是为了在没有任何设计工具的情况下对一个新的系统架构设计进行原型化。您还可以描述或可视化现有的系统体系结构。图目前支持的主要供应商包括: AWS，Azure，GCP，Kubernetes，阿里巴巴云，甲骨文云等。它还支持 On-Premise 节点、 SaaS 以及主要的编程框架和语言。
 
@@ -8,13 +8,13 @@
 
 相比于在 UI 上对各种图标进行拖拽和调整，这种DaC(Diagram as Code)方式更符合我们程序员的使用习惯。
 
-# 二 支持范围
+## 二 支持范围
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20201206211914.png)
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20201206211933.png)
 
-# 三 示例图片
+## 三 示例图片
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20201206211851.png)
 
@@ -22,9 +22,9 @@
 
 
 
-# 四 安装部署
+## 四 安装部署
 
-## 4.1 Python环境
+### 4.1 Python环境
 
 python环境版本为3.6以上，由于我本地python环境管理使用anconda，也可以使用其他工具。
 
@@ -34,7 +34,7 @@ conda activate py-diagrams
 
 ```
 
-## 4.2 graphviz安装
+### 4.2 graphviz安装
 
 它使用Graphviz来呈现图表，因此您需要安装Graphviz来使用图表。安装graphviz（或已经安装）之后，安装这些关系图。
 
@@ -48,9 +48,9 @@ brew install graphviz
 
 
 
-# 五 使用
+## 五 使用
 
-## 5.1 编写代码
+### 5.1 编写代码
 
 ```python
 # diagram.py
@@ -67,7 +67,7 @@ with Diagram("Grouped Workers", show=False, direction="TB"):
                   EC2("worker5")] >> RDS("events")
 ```
 
-## 5.2 生成图片
+### 5.2 生成图片
 
 ```shell
 python diagram.py
@@ -75,11 +75,11 @@ python diagram.py
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20201206211808.png)
 
-# 六 逻辑简介
+## 六 逻辑简介
 
-## 6.1 绘图对象
+### 6.1 绘图对象
 
-### 6.1.1 Diagram
+#### 6.1.1 Diagram
 
 `Diagram`：这是表示图的最主要的对象，代表一个架构图
 
@@ -91,7 +91,7 @@ python diagram.py
 - `show`：指定是否显示图片，默认是 `False`
 - `graph_attr`、`node_attr` 和 `edge_attr`：指定 `Graphviz` 属性选项，用来控制图、点、线的样式，详情查看 [参考链接](https://www.graphviz.org/doc/info/attrs.html)
 
-### 6.1.2 Node	
+#### 6.1.2 Node	
 
 `Node`：表示一个节点或系统组件，比如`快速开始`中的`SLB`、`ECS`和`RDS`都是架构图中的节点。
 
@@ -101,11 +101,11 @@ python diagram.py
 - `<<`：右节点指向左节点
 - `-`：节点互相连接，没有方向
 
-### 6.1.3 Cluster
+#### 6.1.3 Cluster
 
 `Cluster`：表示集群或分组，可将多个节点放到一个集群中，它也是一个上下文管理器，使用 `with` 语法。
 
-## 6.2 贡献云厂商
+### 6.2 贡献云厂商
 
 需要在 `resources/aws` 文件夹中更新资源图片，然后执行 `./autogen.sh` 即可。`./autogen.sh` 会对 `resources/` 做这么几件事：
 
@@ -115,7 +115,7 @@ python diagram.py
 - 自动生成文档
 - 使用 `black` 格式化自动生成的代码
 
-## 6.3 自定义图片
+### 6.3 自定义图片
 
 * 定义图片变量，将链接地址urlretrieve为icon，就可以使用。
 
@@ -150,7 +150,7 @@ with Diagram("01-Broker Consumers", show=False):
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20201206211740.png)
 
 
-# 参考链接
+## 参考链接
 
 * https://github.com/mingrammer/diagrams
 

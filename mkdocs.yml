@@ -41,6 +41,7 @@ theme:
     - search.suggest
     # - toc.integrate
 
+
   palette:
     - scheme: default
       primary: indigo
@@ -180,6 +181,7 @@ nav:
         - cloud-native/operator/tools/K8s日志查看神器之kubetail.md
         - cloud-native/operator/tools/K9s.md
         - cloud-native/operator/tools/k8s 插件管理工具之krew.md
+        - cloud-native/operator/tools/架构图神器DaC之Diagram.md
       - 部署:
         - cloud-native/operator/deploy/最小化K8s环境之minikube.md
         - cloud-native/operator/deploy/最小化K8s环境部署之K3s.md
