@@ -222,6 +222,9 @@ nav:
       - devops/Gitlab CI/03实战Gitlab CI + Supervisor 发布Python项目.md
       - devops/Gitlab CI/04实战前后端项目及混合环境Gitlab CI.md
       - devops/Gitlab CI/05实战Gitlab CI + Kubernetes 代码发布.md
+      - devops/Gitlab CI/Gitlab CI之 单元测试和代码扫描.md
+      - devops/Gitlab CI/Gitlab CI进阶之共享CI库.md
+
     - IaC:
       - devops/IaC/Terraform/IaC扫描工具之Terrascan.md
       - devops/IaC/Terraform/IaC测试工具之Terratest.md

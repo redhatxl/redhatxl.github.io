@@ -1,23 +1,23 @@
 # Velero 二次开发
 
-# 一 准备工作
+## 一 准备工作
 
-## 1.1 开始之前
+### 1.1 开始之前
 
-* 请在贡献之前熟悉行为准则[Code of Conduct](https://github.com/vmware-tanzu/velero/blob/v1.7.0/CODE_OF_CONDUCT.md)。 
-* 另外，请参阅 [CONTRIBUTING.md](https://github.com/vmware-tanzu/velero/blob/v1.7.0/CONTRIBUTING.md)以获取有关我们所需的开发者原产地证书的说明。
+* 熟悉行为准则[Code of Conduct](https://github.com/vmware-tanzu/velero/blob/v1.7.0/CODE_OF_CONDUCT.md)。 
+* 参阅 [CONTRIBUTING.md](https://github.com/vmware-tanzu/velero/blob/v1.7.0/CONTRIBUTING.md)以获取开发准则。
 
-## 1.2 创建设计文档
+### 1.2 创建设计文档
 
 拥有一个高层次的设计文档，其中包含建议的变更和影响，可以帮助维护人员评估是否应该合并一个主要变更。要发出设计拉请求，可以将 design/_ template.md 文件中的模板复制到新的 Markdown 文件中。
 
-## 1.3 寻找路径
+### 1.3 寻找路径
 
 你可以加入 Velero 社区，以不同的方式做出贡献，包括帮助我们设计或测试新功能。对于任何我们考虑添加的重要特性，我们从设计文档开始。你可以在这里找到一个正在进行中的新设计的列表: https://github.com/vmware-tanzu/velero/pulls?q=is%3aopen+is%3apr+label%3adesign。请随时回顾并帮助我们完成您的输入。您还可以使用: + 1: 和:-1: 对问题进行投票，正如我们的功能增强请求和 Bug 问题模板中所解释的那样。这将帮助我们量化问题的重要性并对其进行优先排序。关于如何与我们的维护者和社区联系的信息，参加我们的在线会议，或者找到好的第一个问题，可以从我们的 Velero 社区页面开始。请浏览我们的资源列表，包括过去的在线社区会议、博客文章和其他资源的播放列表，以帮助您熟悉我们的项目: Velero 资源。
 
-# 二 开始开发
+## 二 开始开发
 
-## 2.1 更新生成文件
+### 2.1 更新生成文件
 
 会pull一个velero/build-image 的镜像
 

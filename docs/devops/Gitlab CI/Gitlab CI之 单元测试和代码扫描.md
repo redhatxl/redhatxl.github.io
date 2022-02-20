@@ -43,7 +43,7 @@
 
 ```yaml
 gitlab_pages['access_control'] = true
-pages_external_url "http://43.254.54.93:89"
+pages_external_url "http://43.xx.xx.93:89"
 gitlab_pages['enable'] = true
 ```
 
@@ -64,7 +64,7 @@ gitlab_pages['enable'] = true
 ```yaml
 server {
   listen *:89;
-  server_name  ~^(?<group>.*)\.43\.254\.54\.93$;
+  server_name  ~^(?<group>.*)\.43\.xxx\.xxx\.93$;
   server_tokens off; ## Don't show the nginx version number, a security best practice
 
   ## Disable symlink traversal
