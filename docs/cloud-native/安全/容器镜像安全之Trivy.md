@@ -4,13 +4,13 @@
 
 ## 1.1 Trivy简介
 
-Trivy是一种适用于CI的简单而全面的容器漏洞扫描程序。软件漏洞是指软件或操作系统中存在的故障、缺陷或弱点。Trivy检测操作系统包（Alpine、RHEL、CentOS等）和应用程序依赖（Bundler、Composer、npm、yarn等）的漏洞。Trivy很容易使用，只要安装二进制文件，就可以扫描了。扫描只需指定容器的镜像名称。与其他镜像扫描工具相比，例如Clair，Anchore Engine，Quay相比，Trivy在准确性、方便性和对CI的支持等方面都有着明显的优势。
+Trivy 是一种适用于 CI 的简单而全面的容器漏洞扫描程序。软件漏洞是指软件或操作系统中存在的故障、缺陷或弱点。Trivy 检测操作系统包（Alpine、RHEL、CentOS 等）和应用程序依赖（Bundler、Composer、npm、yarn 等）的漏洞。Trivy 很容易使用，只要安装二进制文件，就可以扫描了。扫描只需指定容器的镜像名称。与其他镜像扫描工具相比，例如 Clair，Anchore Engine，Quay 相比，Trivy 在准确性、方便性和对 CI 的支持等方面都有着明显的优势。
 
 ## 1.2 特性
 
-1. 检测面很全，能检测全面的漏洞，操作系统软件包（Alpine、Red Hat Universal Base Image、Red Hat Enterprise Linux、CentOS、Oracle Linux、Debian、Ubuntu、Amazon Linux、openSUSE Leap、SUSE Enterprise Linux、Photon OS 和Distrioless）、应用程序依赖项（Bundler、Composer、Pipenv、Poetry、npm、yarn和Cargo）；
+1. 检测面很全，能检测全面的漏洞，操作系统软件包（Alpine、Red Hat Universal Base Image、Red Hat Enterprise Linux、CentOS、Oracle Linux、Debian、Ubuntu、Amazon Linux、openSUSE Leap、SUSE Enterprise Linux、Photon OS 和 Distrioless）、应用程序依赖项（Bundler、Composer、Pipenv、Poetry、npm、yarn 和 Cargo）；
 2. 使用简单，仅仅只需要指定镜像名称；
-3. 扫描快且无状态，第一次扫描将在10秒内完成（取决于您的网络）。随后的扫描将在一秒钟内完成。与其他扫描器在第一次运行时需要很长时间（大约10分钟）来获取漏洞信息，并鼓励您维护持久的漏洞数据库不同，Trivy是无状态的，不需要维护或准备；
+3. 扫描快且无状态，第一次扫描将在 10 秒内完成（取决于您的网络）。随后的扫描将在一秒钟内完成。与其他扫描器在第一次运行时需要很长时间（大约 10 分钟）来获取漏洞信息，并鼓励您维护持久的漏洞数据库不同，Trivy 是无状态的，不需要维护或准备；
 4. 易于安装，安装方式：
 
 ```shell
@@ -18,7 +18,7 @@ Trivy是一种适用于CI的简单而全面的容器漏洞扫描程序。软件�
    2. yum install
    3. brew install
 ```
-无需安装数据库、库等先决条件（例外情况是需要安装rpm以扫描基于RHEL/CentOS的图像）。
+无需安装数据库、库等先决条件（例外情况是需要安装 rpm 以扫描基于 RHEL/CentOS 的图像）。
 
 # 二 安装部署
 
@@ -119,9 +119,9 @@ trivy --clear-cache [image_name]
 
 # 三 集成到CI
 
-Trivy有对CI友好的特点，并且官方也以这种方式使用它，想要集成CI只需要一段简单的Yml配置文件即可，如果发现漏洞，测试将失败。如果不希望测试失败，请指定--exit code 0。由于在自动化场景（如CI/CD）中，您只对最终结果感兴趣，而不是对完整的报告感兴趣，因此请使用--light标志对此场景进行优化，以获得快速的结果。
+Trivy 有对 CI 友好的特点，并且官方也以这种方式使用它，想要集成 CI 只需要一段简单的 Yml 配置文件即可，如果发现漏洞，测试将失败。如果不希望测试失败，请指定--exit code 0。由于在自动化场景（如 CI/CD）中，您只对最终结果感兴趣，而不是对完整的报告感兴趣，因此请使用--light 标志对此场景进行优化，以获得快速的结果。
 
-集成GitLab CI的Yml配置可以参考：
+集成 GitLab CI 的 Yml 配置可以参考：
 
 https://github.com/aquasecurity/trivy#gitlab-ci
 
@@ -129,11 +129,11 @@ https://github.com/aquasecurity/trivy#gitlab-ci
 
 - 国内拉取漏洞数据库慢。
 - 同一台服务器，多个镜像扫描的时候不可并行执行。
-- 可以使用--light使用轻量级数据库来优化执行扫描的效率。
+- 可以使用--light 使用轻量级数据库来优化执行扫描的效率。
 
 # 五 反思
 
-trivy不仅可以集成在CI过程中，及时发现镜像漏洞，而且可以于自建harbor进行集成，定时对已经上传的镜像进行扫描。
+trivy 不仅可以集成在 CI 过程中，及时发现镜像漏洞，而且可以于自建 harbor 进行集成，定时对已经上传的镜像进行扫描。
 
 # 参考链接
 

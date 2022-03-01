@@ -44,16 +44,16 @@ theme:
 
   palette:
     - scheme: default
-      primary: indigo
+      primary: teal
       accent: indigo
       toggle:
-        icon: material/lightbulb
+        icon: material/toggle-switch
         name: Switch to dark mode
     - scheme: slate
-      primary: purple
+      primary: light blue
       accent: purple
       toggle:
-        icon: material/lightbulb-outline
+        icon: material/toggle-switch-off-outline
         name: Switch to light mode
   font:
     text: Roboto
@@ -205,6 +205,19 @@ nav:
         - cloud-native/容器/podman详解.md
         - cloud-native/容器/利用katacoda 实现拉取国外镜像.md
         - cloud-native/容器/镜像底层原理.md
+    - 安全:
+        - cloud-native/安全/Kubernetes安全之Kube-bench.md
+        - cloud-native/安全/Kubeeye源码分析.md
+        - cloud-native/安全/Kubernetes安全之Kubeeye.md
+        - cloud-native/安全/Kubernetes安全之NPD.md
+        - cloud-native/安全/Kubernetes安全之OpenPolicy
+        - cloud-native/安全/Kubernetes安全之openebs.md
+        - cloud-native/安全/Kubernetes安全分析.md
+        - cloud-native/安全/kubernetes安全之Polaris.md
+        - cloud-native/安全/Kubernetes安全之kubescape.md
+        - cloud-native/安全/容器镜像安全之Trivy.md
+        - cloud-native/安全/开源容器安全平台之NeuVector.md
+
     - 其他:
       - cloud-native/other/inside-kubernetes controller.md
       - cloud-native/other/Kubectl插件开发及开业分享.md

@@ -290,7 +290,103 @@ func NewBackupController(
 }
 ```
 
-### 2.2 runBackup
+### 2.2 processBackup
+
+controller首先运行的processBackup
+
+```go
+func (c *backupController) processBackup(key string) error {
+	log := c.logger.WithField("key", key)
+
+	log.Debug("Running processBackup")
+  // 分割key
+	ns, name, err := cache.SplitMetaNamespaceKey(key)
+	if err != nil {
+		log.WithError(err).Errorf("error splitting key")
+		return nil
+	}
+
+	log.Debug("Getting backup")
+  // 获取备份对象
+	original, err := c.lister.Backups(ns).Get(name)
+	if apierrors.IsNotFound(err) {
+		log.Debugf("backup %s not found", name)
+		return nil
+	}
+	if err != nil {
+		return errors.Wrap(err, "error getting backup")
+	}
+	
+  // 检测当前备份的状态，万一有多个控制器实例正在运行，控制器 A 有可能成功将阶段更改为 InProgress，而控制器 B 尝试修补阶段失败。当控制器 B 重新处理相同的备份时，它将显示为 New（通知者尚未看到更新）或 InProgress。在前一种情况下，补丁尝试将再次失败，直到通知者看到更新。在后一种情况下，在通知者看到 InProgress 的更新后，我们仍然需要此检查，因此我们可以返回 nil 以指示我们已完成处理此密钥（即使它是空操作）。
+	switch original.Status.Phase {
+	case "", velerov1api.BackupPhaseNew:
+		// only process new backups
+	default:
+		return nil
+	}
+	// 处理prepareBackupRequest
+	log.Debug("Preparing backup request")
+	request := c.prepareBackupRequest(original)
+
+  // 如果验证正常，标记正在处理
+	if len(request.Status.ValidationErrors) > 0 {
+		request.Status.Phase = velerov1api.BackupPhaseFailedValidation
+	} else {
+		request.Status.Phase = velerov1api.BackupPhaseInProgress
+		request.Status.StartTimestamp = &metav1.Time{Time: c.clock.Now()}
+	}
+
+	// 更新备份任务状态
+	updatedBackup, err := patchBackup(original, request.Backup, c.client)
+	if err != nil {
+		return errors.Wrapf(err, "error updating Backup status to %s", request.Status.Phase)
+	}
+	// 
+	original = updatedBackup
+	request.Backup = updatedBackup.DeepCopy()
+
+	if request.Status.Phase == velerov1api.BackupPhaseFailedValidation {
+		return nil
+	}
+
+	c.backupTracker.Add(request.Namespace, request.Name)
+	defer c.backupTracker.Delete(request.Namespace, request.Name)
+
+  // 运行backup
+	log.Debug("Running backup")
+	// 获取定时备份的名称
+	backupScheduleName := request.GetLabels()[velerov1api.ScheduleNameLabel]
+	c.metrics.RegisterBackupAttempt(backupScheduleName)
+
+	// 执行并上传备份
+	if err := c.runBackup(request); err != nil {
+		// 即使 runBackup 在将工件上传到对象存储之前设置了备份的阶段，我们也必须在此处再次检查错误并在发现错误时更新阶段，因为在将工件上传到对象存储时可能会出错，这将导致备份失败。
+		log.WithError(err).Error("backup failed")
+		request.Status.Phase = velerov1api.BackupPhaseFailed
+	}
+
+	switch request.Status.Phase {
+	case velerov1api.BackupPhaseCompleted:
+		c.metrics.RegisterBackupSuccess(backupScheduleName)
+	case velerov1api.BackupPhasePartiallyFailed:
+		c.metrics.RegisterBackupPartialFailure(backupScheduleName)
+	case velerov1api.BackupPhaseFailed:
+		c.metrics.RegisterBackupFailed(backupScheduleName)
+	case velerov1api.BackupPhaseFailedValidation:
+		c.metrics.RegisterBackupValidationFailure(backupScheduleName)
+	}
+
+	log.Debug("Updating backup's final status")
+	if _, err := patchBackup(original, request.Backup, c.client); err != nil {
+		log.WithError(err).Error("error updating backup's final status")
+	}
+
+	return nil
+}
+
+```
+
+### 2.3 runBackup
 
 runBackup运行并上传经过验证的备份，此函数返回的任何错误都会导致备份失败；如果为返回备份错误，检查备份状态错误字段以查看备份是否部分失败。
 
@@ -437,7 +533,7 @@ func (c *backupController) runBackup(backup *pkgbackup.Request) error {
 }
 ```
 
-### 2.3 resync
+### 2.4 resync
 
 resync方法，利用backupController传入的BackupLister 进行list，getLastSuccessBySchedule 为每个计划查找最近完成的备份，并返回计划名称 -> 最近完成备份的完成时间的映射。此映射包含一个用于 ad-hocnon-scheduled 备份的条目，其中键是空字符串。
 
@@ -480,136 +576,35 @@ func getLastSuccessBySchedule(backups []*velerov1api.Backup) map[string]time.Tim
 }
 ```
 
-### 2.4 processBackup
-
-controller首先运行的processBackup
-
-```go
-
-func (c *backupController) processBackup(key string) error {
-	log := c.logger.WithField("key", key)
-
-	log.Debug("Running processBackup")
-  // 分割key
-	ns, name, err := cache.SplitMetaNamespaceKey(key)
-	if err != nil {
-		log.WithError(err).Errorf("error splitting key")
-		return nil
-	}
-
-	log.Debug("Getting backup")
-  // 获取备份对象
-	original, err := c.lister.Backups(ns).Get(name)
-	if apierrors.IsNotFound(err) {
-		log.Debugf("backup %s not found", name)
-		return nil
-	}
-	if err != nil {
-		return errors.Wrap(err, "error getting backup")
-	}
-	
-  // 检测当前备份的状态，万一有多个控制器实例正在运行，控制器 A 有可能成功将阶段更改为 InProgress，而控制器 B 尝试修补阶段失败。当控制器 B 重新处理相同的备份时，它将显示为 New（通知者尚未看到更新）或 InProgress。在前一种情况下，补丁尝试将再次失败，直到通知者看到更新。在后一种情况下，在通知者看到 InProgress 的更新后，我们仍然需要此检查，因此我们可以返回 nil 以指示我们已完成处理此密钥（即使它是空操作）。
-	switch original.Status.Phase {
-	case "", velerov1api.BackupPhaseNew:
-		// only process new backups
-	default:
-		return nil
-	}
-	// 处理prepareBackupRequest
-	log.Debug("Preparing backup request")
-	request := c.prepareBackupRequest(original)
-
-  // 如果验证正常，标记正在处理
-	if len(request.Status.ValidationErrors) > 0 {
-		request.Status.Phase = velerov1api.BackupPhaseFailedValidation
-	} else {
-		request.Status.Phase = velerov1api.BackupPhaseInProgress
-		request.Status.StartTimestamp = &metav1.Time{Time: c.clock.Now()}
-	}
-
-	// 更新备份任务状态
-	updatedBackup, err := patchBackup(original, request.Backup, c.client)
-	if err != nil {
-		return errors.Wrapf(err, "error updating Backup status to %s", request.Status.Phase)
-	}
-	// 
-	original = updatedBackup
-	request.Backup = updatedBackup.DeepCopy()
-
-	if request.Status.Phase == velerov1api.BackupPhaseFailedValidation {
-		return nil
-	}
-
-	c.backupTracker.Add(request.Namespace, request.Name)
-	defer c.backupTracker.Delete(request.Namespace, request.Name)
-
-  // 运行backup
-	log.Debug("Running backup")
-	// 获取定时备份的名称
-	backupScheduleName := request.GetLabels()[velerov1api.ScheduleNameLabel]
-	c.metrics.RegisterBackupAttempt(backupScheduleName)
-
-	// 执行并上传备份
-	if err := c.runBackup(request); err != nil {
-		// 即使 runBackup 在将工件上传到对象存储之前设置了备份的阶段，我们也必须在此处再次检查错误并在发现错误时更新阶段，因为在将工件上传到对象存储时可能会出错，这将导致备份失败。
-		log.WithError(err).Error("backup failed")
-		request.Status.Phase = velerov1api.BackupPhaseFailed
-	}
-
-	switch request.Status.Phase {
-	case velerov1api.BackupPhaseCompleted:
-		c.metrics.RegisterBackupSuccess(backupScheduleName)
-	case velerov1api.BackupPhasePartiallyFailed:
-		c.metrics.RegisterBackupPartialFailure(backupScheduleName)
-	case velerov1api.BackupPhaseFailed:
-		c.metrics.RegisterBackupFailed(backupScheduleName)
-	case velerov1api.BackupPhaseFailedValidation:
-		c.metrics.RegisterBackupValidationFailure(backupScheduleName)
-	}
-
-	log.Debug("Updating backup's final status")
-	if _, err := patchBackup(original, request.Backup, c.client); err != nil {
-		log.WithError(err).Error("error updating backup's final status")
-	}
-
-	return nil
-}
-
-```
-
-
-
 
 
 ### 2.5 prepareBackupRequest
 
-
+对输入参数进行解析并处理，最总防护backup.Request对象
 
 ```go
 func (c *backupController) prepareBackupRequest(backup *velerov1api.Backup) *pkgbackup.Request {
+  // 为了防止修改原始对象，在此进行深度copy
 	request := &pkgbackup.Request{
 		Backup: backup.DeepCopy(), // don't modify items in the cache
 	}
 
-	// set backup major version - deprecated, use Status.FormatVersion
+  // 设置备份主版本，新版本使用tatus.FormatVersion
 	request.Status.Version = pkgbackup.BackupVersion
-
-	// set backup major, minor, and patch version
 	request.Status.FormatVersion = pkgbackup.BackupFormatVersion
-
+	// 设置备份TTL
 	if request.Spec.TTL.Duration == 0 {
-		// set default backup TTL
 		request.Spec.TTL.Duration = c.defaultBackupTTL
 	}
 
 	// calculate expiration
 	request.Status.Expiration = &metav1.Time{Time: c.clock.Now().Add(request.Spec.TTL.Duration)}
-
+	// 默认不使用restic
 	if request.Spec.DefaultVolumesToRestic == nil {
 		request.Spec.DefaultVolumesToRestic = &c.defaultVolumesToRestic
 	}
 
-	// find which storage location to use
+	// 查找可食用的bsl，如果用户未指定，则使用default的bsl
 	var serverSpecified bool
 	if request.Spec.StorageLocation == "" {
 		// when the user doesn't specify a location, use the server default unless there is an existing BSL marked as default
@@ -629,6 +624,7 @@ func (c *backupController) prepareBackupRequest(backup *velerov1api.Backup) *pkg
 	}
 
 	// get the storage location, and store the BackupStorageLocation API obj on the request
+  // 获取storage location，并存储BackupStorageLocation API对象到请求中
 	storageLocation := &velerov1api.BackupStorageLocation{}
 	if err := c.kbClient.Get(context.Background(), kbclient.ObjectKey{
 		Namespace: request.Namespace,
@@ -645,22 +641,22 @@ func (c *backupController) prepareBackupRequest(backup *velerov1api.Backup) *pkg
 			request.Status.ValidationErrors = append(request.Status.ValidationErrors, fmt.Sprintf("error getting backup storage location: %v", err))
 		}
 	} else {
+    
+    // 存储storageLocation API对象到request中
 		request.StorageLocation = storageLocation
-
+		// 更新storageLocation 的访问模式
 		if request.StorageLocation.Spec.AccessMode == velerov1api.BackupStorageLocationAccessModeReadOnly {
 			request.Status.ValidationErrors = append(request.Status.ValidationErrors,
 				fmt.Sprintf("backup can't be created because backup storage location %s is currently in read-only mode", request.StorageLocation.Name))
 		}
 	}
-
-	// add the storage location as a label for easy filtering later.
+  // 增加label为了更方便的过滤
 	if request.Labels == nil {
 		request.Labels = make(map[string]string)
 	}
 	request.Labels[velerov1api.StorageLocationLabel] = label.GetValidName(request.Spec.StorageLocation)
 
-	// validate and get the backup's VolumeSnapshotLocations, and store the
-	// VolumeSnapshotLocation API objs on the request
+  // 校验并获取vsl并存储VolumeSnapshotLocation API  对象到request中
 	if locs, errs := c.validateAndGetSnapshotLocations(request.Backup); len(errs) > 0 {
 		request.Status.ValidationErrors = append(request.Status.ValidationErrors, errs...)
 	} else {
@@ -671,7 +667,7 @@ func (c *backupController) prepareBackupRequest(backup *velerov1api.Backup) *pkg
 		}
 	}
 
-	// Getting all information of cluster version - useful for future skip-level migration
+  // 获取集群版本的所有信息 - 对未来的跳过级迁移很有用
 	if request.Annotations == nil {
 		request.Annotations = make(map[string]string)
 	}
@@ -679,12 +675,12 @@ func (c *backupController) prepareBackupRequest(backup *velerov1api.Backup) *pkg
 	request.Annotations[velerov1api.SourceClusterK8sMajorVersionAnnotation] = c.discoveryHelper.ServerVersion().Major
 	request.Annotations[velerov1api.SourceClusterK8sMinorVersionAnnotation] = c.discoveryHelper.ServerVersion().Minor
 
-	// validate the included/excluded resources
+  // 校验included/excluded 资源
 	for _, err := range collections.ValidateIncludesExcludes(request.Spec.IncludedResources, request.Spec.ExcludedResources) {
 		request.Status.ValidationErrors = append(request.Status.ValidationErrors, fmt.Sprintf("Invalid included/excluded resource lists: %v", err))
 	}
 
-	// validate the included/excluded namespaces
+  // 校验included/excluded 名称空间
 	for _, err := range collections.ValidateIncludesExcludes(request.Spec.IncludedNamespaces, request.Spec.ExcludedNamespaces) {
 		request.Status.ValidationErrors = append(request.Status.ValidationErrors, fmt.Sprintf("Invalid included/excluded namespace lists: %v", err))
 	}
@@ -692,6 +688,238 @@ func (c *backupController) prepareBackupRequest(backup *velerov1api.Backup) *pkg
 	return request
 }
 
+```
+
+### 2.6 Backup
+
+在执行runBackup中，内部针对k8s资源对象具体的备份逻辑实现是在velero/pkg/backup 目录下
+
+
+
+```go
+//velero/pkg/backup/backup.go
+
+func (kb *kubernetesBackupper) Backup(log logrus.FieldLogger, backupRequest *Request, backupFile io.Writer, actions []velero.BackupItemAction, volumeSnapshotterGetter VolumeSnapshotterGetter) error {
+  // 获取压缩写入对象tw
+	gzippedData := gzip.NewWriter(backupFile)
+	defer gzippedData.Close()
+
+	tw := tar.NewWriter(gzippedData)
+	defer tw.Close()
+
+	log.Info("Writing backup version file")
+	if err := kb.writeBackupVersion(tw); err != nil {
+		return errors.WithStack(err)
+	}
+	// 获取includesexcludes的namespace和resource并赋值给backuprequest
+	backupRequest.NamespaceIncludesExcludes = getNamespaceIncludesExcludes(backupRequest.Backup)
+	log.Infof("Including namespaces: %s", backupRequest.NamespaceIncludesExcludes.IncludesString())
+	log.Infof("Excluding namespaces: %s", backupRequest.NamespaceIncludesExcludes.ExcludesString())
+
+	backupRequest.ResourceIncludesExcludes = collections.GetResourceIncludesExcludes(kb.discoveryHelper, backupRequest.Spec.IncludedResources, backupRequest.Spec.ExcludedResources)
+	log.Infof("Including resources: %s", backupRequest.ResourceIncludesExcludes.IncludesString())
+	log.Infof("Excluding resources: %s", backupRequest.ResourceIncludesExcludes.ExcludesString())
+	log.Infof("Backing up all pod volumes using restic: %t", *backupRequest.Backup.Spec.DefaultVolumesToRestic)
+
+	var err error
+  // 获取resourceHooks并赋值给backupRequest
+	backupRequest.ResourceHooks, err = getResourceHooks(backupRequest.Spec.Hooks.Resources, kb.discoveryHelper)
+	if err != nil {
+		return err
+	}
+	// 获取bresolvedAction并赋值给backupRequest
+	backupRequest.ResolvedActions, err = resolveActions(actions, kb.discoveryHelper)
+	if err != nil {
+		return err
+	}
+
+	backupRequest.BackedUpItems = map[itemKey]struct{}{}
+
+	podVolumeTimeout := kb.resticTimeout
+	if val := backupRequest.Annotations[velerov1api.PodVolumeOperationTimeoutAnnotation]; val != "" {
+		parsed, err := time.ParseDuration(val)
+		if err != nil {
+			log.WithError(errors.WithStack(err)).Errorf("Unable to parse pod volume timeout annotation %s, using server value.", val)
+		} else {
+			podVolumeTimeout = parsed
+		}
+	}
+
+	ctx, cancelFunc := context.WithTimeout(context.Background(), podVolumeTimeout)
+	defer cancelFunc()
+	// 获取resticBackupper
+	var resticBackupper restic.Backupper
+	if kb.resticBackupperFactory != nil {
+		resticBackupper, err = kb.resticBackupperFactory.NewBackupper(ctx, backupRequest.Backup)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
+	// set up a temp dir for the itemCollector to use to temporarily
+	// store items as they're scraped from the API.
+  // 生成空目录来存储备份文件
+	tempDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return errors.Wrap(err, "error creating temp dir for backup")
+	}
+	defer os.RemoveAll(tempDir)
+	// 生成具体collector 对象
+	collector := &itemCollector{
+		log:                   log,
+		backupRequest:         backupRequest,
+		discoveryHelper:       kb.discoveryHelper,
+		dynamicFactory:        kb.dynamicFactory,
+		cohabitatingResources: cohabitatingResources(),
+		dir:                   tempDir,
+	}
+	// 获取所有item
+	items := collector.getAllItems()
+	log.WithField("progress", "").Infof("Collected %d items matching the backup spec from the Kubernetes API (actual number of items backed up may be more or less depending on velero.io/exclude-from-backup annotation, plugins returning additional related items to back up, etc.)", len(items))
+
+	backupRequest.Status.Progress = &velerov1api.BackupProgress{TotalItems: len(items)}
+	patch := fmt.Sprintf(`{"status":{"progress":{"totalItems":%d}}}`, len(items))
+	if _, err := kb.backupClient.Backups(backupRequest.Namespace).Patch(context.TODO(), backupRequest.Name, types.MergePatchType, []byte(patch), metav1.PatchOptions{}); err != nil {
+		log.WithError(errors.WithStack((err))).Warn("Got error trying to update backup's status.progress.totalItems")
+	}
+
+	itemBackupper := &itemBackupper{
+		backupRequest:           backupRequest,
+		tarWriter:               tw,
+		dynamicFactory:          kb.dynamicFactory,
+		discoveryHelper:         kb.discoveryHelper,
+		resticBackupper:         resticBackupper,
+		resticSnapshotTracker:   newPVCSnapshotTracker(),
+		volumeSnapshotterGetter: volumeSnapshotterGetter,
+		itemHookHandler: &hook.DefaultItemHookHandler{
+			PodCommandExecutor: kb.podCommandExecutor,
+		},
+	}
+
+	// helper struct to send current progress between the main
+	// backup loop and the gouroutine that periodically patches
+	// the backup CR with progress updates
+	type progressUpdate struct {
+		totalItems, itemsBackedUp int
+	}
+
+	// the main backup process will send on this channel once
+	// for every item it processes.
+	update := make(chan progressUpdate)
+
+	// the main backup process will send on this channel when
+	// it's done sending progress updates
+	quit := make(chan struct{})
+
+	// This is the progress updater goroutine that receives
+	// progress updates on the 'update' channel. It patches
+	// the backup CR with progress updates at most every second,
+	// but it will not issue a patch if it hasn't received a new
+	// update since the previous patch. This goroutine exits
+	// when it receives on the 'quit' channel.
+	go func() {
+		ticker := time.NewTicker(1 * time.Second)
+		var lastUpdate *progressUpdate
+		for {
+			select {
+			case <-quit:
+				ticker.Stop()
+				return
+			case val := <-update:
+				lastUpdate = &val
+			case <-ticker.C:
+				if lastUpdate != nil {
+					backupRequest.Status.Progress.TotalItems = lastUpdate.totalItems
+					backupRequest.Status.Progress.ItemsBackedUp = lastUpdate.itemsBackedUp
+
+					patch := fmt.Sprintf(`{"status":{"progress":{"totalItems":%d,"itemsBackedUp":%d}}}`, lastUpdate.totalItems, lastUpdate.itemsBackedUp)
+					if _, err := kb.backupClient.Backups(backupRequest.Namespace).Patch(context.TODO(), backupRequest.Name, types.MergePatchType, []byte(patch), metav1.PatchOptions{}); err != nil {
+						log.WithError(errors.WithStack((err))).Warn("Got error trying to update backup's status.progress")
+					}
+					lastUpdate = nil
+				}
+			}
+		}
+	}()
+
+	backedUpGroupResources := map[schema.GroupResource]bool{}
+	totalItems := len(items)
+
+	for i, item := range items {
+		log.WithFields(map[string]interface{}{
+			"progress":  "",
+			"resource":  item.groupResource.String(),
+			"namespace": item.namespace,
+			"name":      item.name,
+		}).Infof("Processing item")
+
+		// use an anonymous func so we can defer-close/remove the file
+		// as soon as we're done with it
+		func() {
+			var unstructured unstructured.Unstructured
+
+			f, err := os.Open(item.path)
+			if err != nil {
+				log.WithError(errors.WithStack(err)).Error("Error opening file containing item")
+				return
+			}
+			defer f.Close()
+			defer os.Remove(f.Name())
+
+			if err := json.NewDecoder(f).Decode(&unstructured); err != nil {
+				log.WithError(errors.WithStack(err)).Error("Error decoding JSON from file")
+				return
+			}
+
+			if backedUp := kb.backupItem(log, item.groupResource, itemBackupper, &unstructured, item.preferredGVR); backedUp {
+				backedUpGroupResources[item.groupResource] = true
+			}
+		}()
+
+		// updated total is computed as "how many items we've backed up so far, plus
+		// how many items we know of that are remaining"
+		totalItems = len(backupRequest.BackedUpItems) + (len(items) - (i + 1))
+
+		// send a progress update
+		update <- progressUpdate{
+			totalItems:    totalItems,
+			itemsBackedUp: len(backupRequest.BackedUpItems),
+		}
+
+		log.WithFields(map[string]interface{}{
+			"progress":  "",
+			"resource":  item.groupResource.String(),
+			"namespace": item.namespace,
+			"name":      item.name,
+		}).Infof("Backed up %d items out of an estimated total of %d (estimate will change throughout the backup)", len(backupRequest.BackedUpItems), totalItems)
+	}
+
+	// no more progress updates will be sent on the 'update' channel
+	quit <- struct{}{}
+
+	// back up CRD for resource if found. We should only need to do this if we've backed up at least
+	// one item for the resource and IncludeClusterResources is nil. If IncludeClusterResources is false
+	// we don't want to back it up, and if it's true it will already be included.
+	if backupRequest.Spec.IncludeClusterResources == nil {
+		for gr := range backedUpGroupResources {
+			kb.backupCRD(log, gr, itemBackupper)
+		}
+	}
+
+	// do a final update on progress since we may have just added some CRDs and may not have updated
+	// for the last few processed items.
+	backupRequest.Status.Progress.TotalItems = len(backupRequest.BackedUpItems)
+	backupRequest.Status.Progress.ItemsBackedUp = len(backupRequest.BackedUpItems)
+
+	patch = fmt.Sprintf(`{"status":{"progress":{"totalItems":%d,"itemsBackedUp":%d}}}`, len(backupRequest.BackedUpItems), len(backupRequest.BackedUpItems))
+	if _, err := kb.backupClient.Backups(backupRequest.Namespace).Patch(context.TODO(), backupRequest.Name, types.MergePatchType, []byte(patch), metav1.PatchOptions{}); err != nil {
+		log.WithError(errors.WithStack((err))).Warn("Got error trying to update backup's status.progress")
+	}
+
+	log.WithField("progress", "").Infof("Backed up a total of %d items", len(backupRequest.BackedUpItems))
+
+	return nil
+}
 ```
 
 
