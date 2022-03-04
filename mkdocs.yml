@@ -205,6 +205,7 @@ nav:
         - cloud-native/容器/podman详解.md
         - cloud-native/容器/利用katacoda 实现拉取国外镜像.md
         - cloud-native/容器/镜像底层原理.md
+        - cloud-native/容器/Harbor和registry镜像仓库部署.md
     - 安全:
         - cloud-native/安全/Kubernetes安全之Kube-bench.md
         - cloud-native/安全/Kubeeye源码分析.md
