@@ -451,14 +451,14 @@ systemctl restart grafana-server
 
 [smtp]
 enabled = true
-host = smtp.163.com:465
-user = 18329903316
+host = smtxxxxxxom:465
+user = 1xxxxxxxxx
 # If the password contains # or ; you have to wrap it with trippel quotes. Ex """#password;"""
 password = xxxxxxxxxxxx
 ;cert_file =
 ;key_file =
 ;skip_verify = false
-from_address = 18329903316@163.com
+from_address = 1xxxxxxxxxxx3316@163.com
 ;from_name = Grafana
 ;ehlo_identity = dashboard.example.com
 ```
