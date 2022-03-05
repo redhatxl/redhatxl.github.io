@@ -44,6 +44,13 @@ NeuVector 的其他特性包括隔离容器和通过 SYSLOG 和 webhooks 导出�
 * 运行:容器内病毒、木马、破解器防护.
 * 主机、Runtime、 K8S级别安全基线扫描，合规性评估。
 
+### 2.3 优势
+
+* 开放性: 100%开源,无需担心供应商锁定。
+* 灵活性:灵活部署各类Kubernetes发行版, Rancher、Openshift、EKS、 GKE、ACK、 TKE。
+* 可靠性: 7年迭代,成熟稳定产品。
+* 专业性:专业支持服务,保障业务安全可靠持续运行。
+
 ## 三 组件构成即部署模式
 
 NeuVector 运行时容器安全方案包括四种类型安全容器：Controllers，Enforcers，Managers，Scanners。
@@ -81,8 +88,8 @@ NeuVector提供操作系统/Runtime/K8s/容器应用三个层面安全业务进�
 * 添加 repo
 
 ```shell
-$ helm repo add neuvector https://neuvector.github.io/neuvector-helm/
-$ helm search repo neuvector/core
+helm repo add neuvector https://neuvector.github.io/neuvector-helm/
+helm search repo neuvector/core
 ```
 
 * #### Kubernetes部署
@@ -90,9 +97,12 @@ $ helm search repo neuvector/core
 ```shell
 kubectl create namespace neuvector
 kubectl create serviceaccount neuvector -n neuvector
-kubectl create secret docker-registry regsecret -n neuvector --docker-server=https://index.docker.io/v1/ --docker-username=xxxxxxxxx --docker-password=xxxxxxxx--docker-email=1xxxxxxxxx
+helm install neuvector --namespace neuvector neuvector/core  --set registry=docker.io  --set
+tag=5.0.0-preview.1 --set=controller.image.repository=neuvector/controller.preview --
+set=enforcer.image.repository=neuvector/enforcer.preview --set 
+manager.image.repository=neuvector/manager.preview --set 
+cve.scanner.image.repository=neuvector/scanner.preview --set cve.updater.image.repository=neuvector/updater.preview
 
-helm install my-release --namespace neuvector neuvector/core  --set imagePullSecrets=regsecret
 
 NAME: my-release
 LAST DEPLOYED: Wed Jan 19 21:04:03 2022
@@ -107,7 +117,138 @@ Get the NeuVector URL by running these commands:
   echo https://$NODE_IP:$NODE_PORT
 ```
 
+Helm-chart 参数查看：
 
+https://github.com/neuvector/neuvector-helm/tree/master/charts/core
+
+### 5.2 资源清单部署
+
+#### 5.2.1 安装环境
+
+```shell
+软件版本：
+Kubernetes：1.20.14
+Docker：19.03.15
+NeuVector：5.0.0-preview.1
+```
+
+#### 5.2.2 开始执行安装
+
+* 创建 namespace
+
+```
+kubectl create namespace neuvector
+```
+
+* 部署 CRD( Kubernetes 1.19+ 版本)
+
+```
+kubectl apply -f https://raw.githubusercontent.com/neuvector/manifests/main/kubernetes/crd-k8s-1.19.yaml
+```
+
+* 部署 CRD(Kubernetes 1.18或更低版本)
+
+```
+kubectl apply -f https://raw.githubusercontent.com/neuvector/manifests/main/kubernetes/crd-k8s-1.16.yaml
+```
+
+* 配置 RBAC
+
+```
+kubectl create clusterrole neuvector-binding-app --verb=get,list,watch,update --resource=nodes,pods,services,namespaces
+kubectl create clusterrole neuvector-binding-rbac --verb=get,list,watch --resource=rolebindings.rbac.authorization.k8s.io,roles.rbac.authorization.k8s.io,clusterrolebindings.rbac.authorization.k8s.io,clusterroles.rbac.authorization.k8s.io
+kubectl create clusterrolebinding neuvector-binding-app --clusterrole=neuvector-binding-app --serviceaccount=neuvector:default
+kubectl create clusterrolebinding neuvector-binding-rbac --clusterrole=neuvector-binding-rbac --serviceaccount=neuvector:default
+kubectl create clusterrole neuvector-binding-admission --verb=get,list,watch,create,update,delete --resource=validatingwebhookconfigurations,mutatingwebhookconfigurations
+kubectl create clusterrolebinding neuvector-binding-admission --clusterrole=neuvector-binding-admission --serviceaccount=neuvector:default
+kubectl create clusterrole neuvector-binding-customresourcedefinition --verb=watch,create,get --resource=customresourcedefinitions
+kubectl create clusterrolebinding  neuvector-binding-customresourcedefinition --clusterrole=neuvector-binding-customresourcedefinition --serviceaccount=neuvector:default
+kubectl create clusterrole neuvector-binding-nvsecurityrules --verb=list,delete --resource=nvsecurityrules,nvclustersecurityrules
+kubectl create clusterrolebinding neuvector-binding-nvsecurityrules --clusterrole=neuvector-binding-nvsecurityrules --serviceaccount=neuvector:default
+kubectl create clusterrolebinding neuvector-binding-view --clusterrole=view --serviceaccount=neuvector:default
+kubectl create rolebinding neuvector-admin --clusterrole=admin --serviceaccount=neuvector:default -n neuvector
+```
+
+* 检查是否有以下 RBAC 对象
+
+```
+kubectl get clusterrolebinding  | grep neuvectorkubectl get rolebinding -n neuvector | grep neuvector
+kubectl get clusterrolebinding  | grep neuvector
+neuvector-binding-admission                            ClusterRole/neuvector-binding-admission                            44hneuvector-binding-app                                  ClusterRole/neuvector-binding-app                                  44hneuvector-binding-customresourcedefinition             ClusterRole/neuvector-binding-customresourcedefinition             44hneuvector-binding-nvadmissioncontrolsecurityrules      ClusterRole/neuvector-binding-nvadmissioncontrolsecurityrules      44hneuvector-binding-nvsecurityrules                      ClusterRole/neuvector-binding-nvsecurityrules                      44hneuvector-binding-nvwafsecurityrules                   ClusterRole/neuvector-binding-nvwafsecurityrules                   44hneuvector-binding-rbac                                 ClusterRole/neuvector-binding-rbac                                 44hneuvector-binding-view                                 ClusterRole/view                                                   44h
+```
+
+```
+kubectl get rolebinding -n neuvector | grep neuvectorneuvector-admin         ClusterRole/admin            44hneuvector-binding-psp   Role/neuvector-binding-psp   44h
+```
+
+* 部署 NeuVector
+  * 底层 Runtime 为 Docker
+
+```
+kubectl apply -f https://raw.githubusercontent.com/neuvector/manifests/main/kubernetes/5.0.0/neuvector-docker-k8s.yaml
+```
+
+底层 Runtime 为 Containerd（对于 k3s 和 rke2 可以使用此 yaml 文件）
+
+```
+kubectl apply -f https://raw.githubusercontent.com/neuvector/manifests/main/kubernetes/5.0.0/neuvector-containerd-k8s.yaml
+```
+
+1.21 以下的 Kubernetes 版本会提示以下错误，将 yaml 文件下载将 batch/v1 修改为 batch/v1beta1
+
+```
+error: unable to recognize "https://raw.githubusercontent.com/neuvector/manifests/main/kubernetes/5.0.0/neuvector-docker-k8s.yaml": no matches for kind "CronJob" in version "batch/v1"
+```
+
+1.20.x cronjob 还处于 beta 阶段，1.21 版本开始 cronjob 才正式 GA 。
+
+默认部署web-ui使用的是loadblance类型的Service，为了方便访问修改为NodePort，也可以通过 Ingress 对外提供服务
+
+```
+kubectl patch  svc neuvector-service-webui  -n neuvector --type='json' -p '[{"op":"replace","path":"/spec/type","value":"NodePort"},{"op":"add","path":"/spec/ports/0/nodePort","value":30888}]'
+```
+
+访问 https://node_ip:30888
+
+默认密码为 admin/admin
+
+#### 5.2.3 访问
+
+由于我采用minikube部署，临时菜哟哦那个port-forward访问测试。
+
+```shel
+kubectl port-forward --address 0.0.0.0 -n neuvector service/neuvector-service-webui 22222:8443
+```
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220304204541.png)
+
+## 六 功能测试
+
+### 6.1 Dashboard
+
+在neuvector的dashboard页面，除了有集群的健康体检，还有入口和出口暴露，已经TOP安全事件/资源/策略等。
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220304211008.png)
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220304205144.png)
+
+### 6.2 Network Activity
+
+
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220304205913.png)
+
+
+
+### 6.3 
+
+
+
+### 6.4 
+
+### 6.5 
+
+### 6.7 
 
 
 
@@ -115,11 +256,7 @@ Get the NeuVector URL by running these commands:
 
 ## 其他
 
-* 如果镜像拉取异常可以使用我的镜像
-
-```shell
-registry.neuvector.com/controller:4.4.4
-```
+* 
 
 
 
@@ -129,3 +266,4 @@ registry.neuvector.com/controller:4.4.4
 * https://mp.weixin.qq.com/s/iUpDaokUKt4Uf3m9aNRRVQ
 * https://github.com/neuvector/neuvector
 * https://github.com/neuvector/manager
+* https://mp.weixin.qq.com/s/kOGNT2L2HVMibyyM6Ri2KQ
