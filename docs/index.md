@@ -27,6 +27,9 @@
         - [kubectl-img](https://github.com/redhatxl/kubectl-img)
 
         - [shell-scripts](https://github.com/daily-scripts/shell-scripts)
+
+        - [在线背单词](https://daily-scripts.github.io/)
+        
 ## Blog
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220204194001.png)
