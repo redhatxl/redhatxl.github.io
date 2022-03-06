@@ -267,26 +267,3 @@ func (l *ConcreteList) Remove(e Entity) {
 
 
 
-
-
-
-
-
-- Bad
-
-```go
-
-```
-
-
-
-
-
-- Good
-
-```go
-
-```
-
-
-

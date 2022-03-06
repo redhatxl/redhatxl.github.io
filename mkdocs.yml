@@ -274,6 +274,18 @@ nav:
         - develop/Golang/gin/gin-swagger.md
         - develop/Golang/gin/gin-validator参数校验.md
         - develop/Golang/gin/gin框架优雅关机重启.md
+      - 开发规范:
+        - develop/规范/uber-go 语言编码规范/Golang编码规范之性能01.md
+        - develop/规范/uber-go 语言编码规范/Golang编码规范之规范01.md
+        - develop/规范/uber-go 语言编码规范/Golang编码规范之规范02.md
+        - develop/规范/uber-go 语言编码规范/Golang编码规范之规范03.md
+        - develop/规范/uber-go 语言编码规范/Golang编码规范之规范04.md
+        - develop/规范/uber-go 语言编码规范/Golang编码规范之指导原则01.md
+        - develop/规范/uber-go 语言编码规范/Golang编码规范之编程模式01.md
+        - develop/规范/uber-go 语言编码规范/Golang编码规范之指导原则02.md
+        - develop/规范/uber-go 语言编码规范/Golang编码规范之指导原则03.md
+        - develop/规范/uber-go 语言编码规范/Golang编码规范之指导原则04.md
+        - develop/规范/uber-go 语言编码规范/Golang编码规范之指导原则05.md
 
       - 其他:
         - develop/Golang/golang 分布式链路最终之jaeger.md

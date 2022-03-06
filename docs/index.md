@@ -28,7 +28,7 @@
 
         - [shell-scripts](https://github.com/daily-scripts/shell-scripts)
 
-        - [在线背单词](https://daily-scripts.github.io/)
+
         
 ## Blog
 
