@@ -90,6 +90,44 @@ Fork 这个示例仓库到自己github：https://github.com/redhatxl/tencent-clo
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220309190141.png)
 
+* 测试GitHub提交PR出发
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220310165855.png)
+
+此刻terraform自动就回去执行。
+
+## 五 注意事项
+
+* 可以在workspace设置terraform的版本：
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220310170033.png)
+
+* tencent的provider需要指明source地址
+
+```shell
+provider "tencentcloud" {
+  secret_id  = ""
+  secret_key = ""
+  region     = ""
+}
+
+
+terraform {
+  required_providers {
+    tencentcloud = {
+      source  = "registry.terraform.io/tencentcloudstack/tencentcloud"
+
+    }
+  }
+
+}
+```
+
+
+
+
+
 ## 参考链接
 
 * https://cloud.tencent.com/developer/article/1505878
+* https://app.terraform.io/
