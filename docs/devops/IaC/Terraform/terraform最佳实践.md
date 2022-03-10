@@ -49,6 +49,57 @@ export TF_LOG_PATH=./terraform.log
 
 执行完毕后，可查看 Terraform 本地文件夹会生成一个 `terraform.log` 的文件。文件记录了  provider 定义的日志输出。
 
+## 三 实战
+
+### 3.1 使用stats文件作为查询源
+
+在实际应用场景中，可能module A 需要依赖已经运行完成后的module B 的outputs，例如实例绑定安全组，需要先运行安全组module将结果存储在state文件中，module A以module B的运行结果state文件作为数据输入源进行查询操作。
+
+例如使用cos作为backend后端存储。
+
+```yaml
+provider "tencentcloud" {
+  region = "ap-beijing"
+}
+
+terraform {
+  required_providers {
+    tencentcloud = {
+      source  = "registry.terraform.io/tencentcloudstack/tencentcloud"
+      version = ">=1.61.5"
+    }
+  }
+  backend "cos" {
+    region = "ap-beijing"
+    bucket = "cfabackend-xxxxxx"
+    prefix = "terraform/state"
+  }
+}
+```
+
+使用cos中的state文件作为terraform_remote_state。
+
+```yaml
+data "terraform_remote_state" "cam" {
+  backend = "cos"
+  config = {
+    region = "ap-beijing"
+    bucket = "cfabackend-xxxxxx"
+    prefix = "terraform/state"
+  }
+}
+
+locals {
+    standards = data.terraform_remote_state.cam.outputs
+}
+
+output "result" {
+  value = {
+    items = { for k, v in local.standards :k=>v}
+  }
+}
+```
+
 
 
 

@@ -238,27 +238,90 @@ kubectl port-forward --address 0.0.0.0 -n neuvector service/neuvector-service-we
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220304205913.png)
 
+### 6.3 资产
+
+#### 6.3.1 平台
+
+在平台模块，可以看到当前集群运行的K8s版本，及当前集群中存在的CVE漏洞及详细漏洞信息。
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220306132518.png)
+
+#### 6.3.2 主机
+
+在改模块可以看到运行K8s集群的Node节点资源信息，保护操作系统及资源软件版本等信息。
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220306132704.png)
+
+* 合规信息
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220306132741.png)
+
+* 漏洞信息
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220306132802.png)
+
+* 容器信息
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220306132908.png)
+
+#### 6.3.3 容器
+
+该模块可以看到集群运行的所有容器，并可以对单个容器进行查询详细信息，漏洞信息，容器进程，容器实时监控等。
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220306133152.png)
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220306133056.png)
+
+#### 6.3.4 镜像库
+
+镜像库可以添加公有云镜像，或自建镜像，对其中存储的镜像进行安全扫描。
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220306133536.png)
+
+#### 6.3.5 系统组件
+
+该模块是对NeeuVector的系统自己例如控制器/扫描器/代理器进行信息展示和监控统计。
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220306133402.png)
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220306133455.png)
+
+### 6.4 策略
+
+* 准入控制
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220306133812.png)
+
+* 策略了
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220306133857.png)
 
 
-### 6.3 
 
+### 6.5 安全隐患
 
+* 漏洞
 
-### 6.4 
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220306134000.png)
 
-### 6.5 
+* 合规
 
-### 6.7 
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220306134026.png)
 
+### 6.7 通知/设置
 
+* 风险报告
 
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220306134101.png)
 
+* 事件
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220306134122.png)
 
 ## 其他
 
-* 
-
-
+* NeuVector支持多集群管理。
+* 支持丰富的策略及报告导出。
 
 ## 参考链接
 
