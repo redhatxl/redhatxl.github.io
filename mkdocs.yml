@@ -174,25 +174,36 @@ nav:
       - cloud-native/develop/x-DeltaFIFO和indexer 数据结构对比.md
     - 运维:
       - 工具:
-        - cloud-native/operator/tools/K8s 安全之Kube-bench.md
-        - cloud-native/operator/tools/kubescape安全.md
-        - cloud-native/operator/tools/kubecolor.md
-        - cloud-native/operator/tools/K8s 网络抓包之sniff.md
+        - cloud-native/operator/tools/K8s可视化工具之KUR8.md
+        - cloud-native/operator/tools/K8s快捷操作工具之K9s.md
+        - cloud-native/operator/tools/K8s色彩输出工具之kubecolor.md
         - cloud-native/operator/tools/K8s日志查看神器之kubetail.md
-        - cloud-native/operator/tools/K9s.md
-        - cloud-native/operator/tools/k8s 插件管理工具之krew.md
+        - cloud-native/operator/tools/K8s网络抓包工具之sniff.md
+        - cloud-native/operator/tools/Kubernetes备份还原工具.md
+        - cloud-native/operator/tools/k8s插件管理工具之krew.md
         - cloud-native/operator/tools/架构图神器DaC之Diagram.md
+        - cloud-native/operator/tools/云原生备份恢复之velero实战.md
       - 部署:
+        - cloud-native/operator/deploy/Ceph集群部署安装.md
         - cloud-native/operator/deploy/最小化K8s环境之minikube.md
         - cloud-native/operator/deploy/最小化K8s环境部署之K3s.md
         - cloud-native/operator/deploy/最小化K8s环境部署之Kind.md
         - cloud-native/operator/deploy/最小化K8s环境部署之MicroK8s.md
       - servicemesh:
         - istio:
-          - cloud-native/servicemesh/istio/Istio笔记之pilot.md
           - cloud-native/servicemesh/istio/Envoy笔记.md
-          - cloud-native/servicemesh/istio/Istio之流量管理.md
+          - cloud-native/servicemesh/istio/服务网格进阶实战.md
+          - cloud-native/servicemesh/istio/详解.md
           - cloud-native/servicemesh/istio/Istio之XDS协议解析.md
+          - cloud-native/servicemesh/istio/Istio笔记之Gateway.md
+          - cloud-native/servicemesh/istio/Istio笔记之pilot.md
+          - cloud-native/servicemesh/istio/Istio灰度发布.md
+          - cloud-native/servicemesh/istio/Istio之流量管理.md
+          - cloud-native/servicemesh/istio/Istio简介及架构.md
+          - cloud-native/servicemesh/istio/Istio微服务治理笔记(一).md
+          - cloud-native/servicemesh/istio/Istio基础之服务网络.md
+          - cloud-native/servicemesh/istio/微服务金丝雀发布.md
+          - cloud-native/servicemesh/istio/istio笔记.md
 
       - 排错:
         - cloud-native/operator/other/k8s 集群etcd排错.md

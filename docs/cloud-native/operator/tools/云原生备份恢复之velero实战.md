@@ -1,14 +1,14 @@
 # 云原生备份恢复之velero实战
 
-# 一 背景
+## 一 背景
 
 Kubernetes 集群备份是一大难点。虽然可以通过[Etcd v3备份与恢复](http://mp.weixin.qq.com/s?__biz=MzA4MzIwNTc4NQ==&mid=2247484108&idx=1&sn=9852f8a55ea1f494a2c3caeb7a6655b2&chksm=9ffb493aa88cc02c797611cf5a33246f7705287ac47dbd280a637e13c9e197310755d3adc44b&scene=21#wechat_redirect)来实现K8S集群备份，但是这种备份很难恢复单个 `Namespace`。
 
 对于K8s集群数据的备份和恢复，以及复制当前集群数据到其他集群等都非常方便。可以在两个集群间克隆应用和命名空间，来创建一个临时性的开发环境。
 
-# 二  Velero概述
+## 二  Velero概述
 
-## 2.1 什么是Velero
+### 2.1 什么是Velero
 
 Velero 是一个云原生的灾难恢复和迁移工具，它本身也是开源的, 采用 Go 语言编写，可以安全的备份、恢复和迁移Kubernetes集群资源和持久卷。
 
@@ -20,15 +20,15 @@ Heptio Velero ( 以前的名字为 ARK) 是一款用于 Kubernetes 集群资源�
 
 使用velero可以对集群进行备份和恢复，降低集群DR造成的影响。velero的基本原理就是将集群的数据备份到对象存储中，在恢复的时候将数据从对象存储中拉取下来。可以从官方文档查看可接收的对象存储，本地存储可以使用Minio。下面演示使用velero将openstack上的openshift集群备份恢复到阿里云的openshift上。
 
-## 2.2 Velero工作流程
+### 2.2 Velero工作流程
 
-### 2.2.1 流程图
+#### 2.2.1 流程图
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20200811095018.png)
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20200811094957.png)
 
-### 2.2.2 备份过程
+#### 2.2.2 备份过程
 
 1. 本地 `Velero` 客户端发送备份指令。
 2. `Kubernetes` 集群内就会创建一个 `Backup` 对象。
@@ -36,7 +36,7 @@ Heptio Velero ( 以前的名字为 ARK) 是一款用于 Kubernetes 集群资源�
 4. `BackupController` 会向 `API Server` 查询相关数据。
 5. `BackupController` 将查询到的数据备份到远端的对象存储。
 
-## 2.3 Velero的特性
+### 2.3 Velero的特性
 
 `Velero` 目前包含以下特性：
 
@@ -44,14 +44,14 @@ Heptio Velero ( 以前的名字为 ARK) 是一款用于 Kubernetes 集群资源�
 - 支持复制当前 `Kubernetes` 集群的资源到其它 `Kubernetes` 集群
 - 支持复制生产环境到开发以及测试环境
 
-## 2.4 Velero组建
+### 2.4 Velero组建
 
 `Velero` 组件一共分两部分，分别是服务端和客户端。
 
 * 服务端：运行在你 `Kubernetes` 的集群中
 * 客户端：是一些运行在本地的命令行的工具，需要已配置好 `kubectl` 及集群 `kubeconfig` 的机器上
 
-## 2.5 支持备份存储
+### 2.5 支持备份存储
 
 - AWS S3 以及兼容 S3 的存储，比如：Minio
 - Azure BloB 存储
@@ -60,18 +60,18 @@ Heptio Velero ( 以前的名字为 ARK) 是一款用于 Kubernetes 集群资源�
 
 > 项目地址：https://github.com/heptio/velero
 
-## 2.6 适应场景
+### 2.6 适应场景
 
 - `灾备场景`：提供备份恢复k8s集群的能力
 - `迁移场景`：提供拷贝集群资源到其他集群的能力（复制同步开发，测试，生产环境的集群配置，简化环境配置）
 
-## 2.7 与etcd的区别
+### 2.7 与etcd的区别
 
 与 Etcd 备份相比，直接备份 `Etcd` 是将集群的全部资源备份起来。而 `Velero` 就是可以对 `Kubernetes` 集群内对象级别进行备份。除了对 `Kubernetes` 集群进行整体备份外，`Velero` 还可以通过对 `Type`、`Namespace`、`Label` 等对象进行分类备份或者恢复。
 
 > 注意: 备份过程中创建的对象是不会被备份的。
 
-# 三 备份过程
+## 三 备份过程
 
 `Velero` 在 `Kubernetes` 集群中创建了很多 `CRD` 以及相关的控制器，进行备份恢复等操作实质上是对相关 `CRD` 的操作。
 
@@ -93,19 +93,19 @@ volumesnapshotlocations.velero.io   2019-08-28T03:19:56Z
 
 ```
 
-## 3.1 保障数据一致性
+### 3.1 保障数据一致性
 
 对象存储的数据是唯一的数据源，也就是说 `Kubernetes` 集群内的控制器会检查远程的 `OSS` 存储，发现有备份就会在集群内创建相关 `CRD` 。如果发现远端存储没有当前集群内的 `CRD` 所关联的存储数据，那么就会删除当前集群内的 `CRD`。
 
-## 3.2 支持的后端存储
+### 3.2 支持的后端存储
 
 `Velero` 支持两种关于后端存储的 `CRD`，分别是 `BackupStorageLocation` 和 `VolumeSnapshotLocation`。
 
-### 3.2.1 BackupStorageLocation
+#### 3.2.1 BackupStorageLocation
 
 `BackupStorageLocation` 主要用来定义 `Kubernetes` 集群资源的数据存放位置，也就是集群对象数据，不是 `PVC` 的数据。主要支持的后端存储是 `S3` 兼容的存储，比如：`Mino` 和阿里云 `OSS` 等。
 
-#### 3.2.1.1 Minio
+##### 3.2.1.1 Minio
 
 ```yaml
 apiVersion: velero.io/v1
@@ -138,7 +138,7 @@ spec:
     s3Url: http://minio:9000
 ```
 
-#### 3.2.1.2 阿里OSS
+##### 3.2.1.2 阿里OSS
 
 ```yaml
 apiVersion: velero.io/v1
@@ -159,7 +159,7 @@ spec:
   provider: aws
 ```
 
-### 3.2.2 VolumeSnapshotLocation
+#### 3.2.2 VolumeSnapshotLocation
 
 VolumeSnapshotLocation 主要用来给 PV 做快照，需要云提供商提供插件。阿里云已经提供了插件，这个需要使用 CSI 等存储机制。你也可以使用专门的备份工具 `Restic`，把 PV 数据备份到阿里云 OSS 中去(安装时需要自定义选项)。
 
@@ -175,26 +175,22 @@ Restic 是一款 GO 语言开发的数据加密备份工具，顾名思义，可
 
 项目地址：https://github.com/restic/restic
 
+## 四 实践velero备份minio
 
-
-
-
-# 四 实践velero备份minio
-
-## 4.1 环境要求
+### 4.1 环境要求
 
 * kubernetes >1.7;
 
-## 4.2 部署velero
+### 4.2 部署velero
 
-### 4.2.1 下载velero
+#### 4.2.1 下载velero
 
 ```shell
 wget https://github.com/vmware-tanzu/velero/releases/download/v1.4.2/velero-v1.4.2-linux-amd64.tar.gz
 tar -zxvf velero-v1.4.2-linux-amd64.tar.gz
 ```
 
-### 4.2.2 安装minio
+#### 4.2.2 安装minio
 
 ```yaml
 cd velero-v1.4.2-linux-amd64
@@ -352,9 +348,9 @@ minio   NodePort   10.233.39.204   <none>        9000:30401/TCP   2m26s
 
 ![image-20200721172012554](/Users/xuel/Library/Application Support/typora-user-images/image-20200721172012554.png)
 
-### 4.2.3 安装velero
+#### 4.2.3 安装velero
 
-#### 4.2.3.1 创建密钥
+##### 4.2.3.1 创建密钥
 
 安装velero需要创建能正常登录minio的密钥
 
@@ -369,7 +365,7 @@ cp velero /usr/bin/
 
 ```
 
-#### 4.2.3.2 K8s集群安装velero
+##### 4.2.3.2 K8s集群安装velero
 
 ```shell
 # 启用快速补全
@@ -434,7 +430,7 @@ velero-56fbc5d69c-8v2q7   1/1     Running     0          32m
 
 至此velero就已经全部部署完成。
 
-## 4.3 velero命令
+### 4.3 velero命令
 
 ```yaml
 $ velero create backup NAME [flags]
@@ -475,11 +471,11 @@ $ velero create backup NAME [flags]
 --volume-snapshot-locations strings               list of locations (at most one per provider) where volume snapshots should be stored
 ```
 
-## 4.4 测试
+### 4.4 测试
 
 velero非常的人性化，在安装包中已经为我们准备好了测试demo，我们可以利用测试demo来进行测试验证。
 
-### 4.4.1 创建测试应用
+#### 4.4.1 创建测试应用
 
 ```shell
 [root@master velero-v1.4.2-linux-amd64]# kubectl apply -f examples/nginx-app/base.yaml
@@ -498,7 +494,7 @@ NAME                                         DESIRED   CURRENT   READY   AGE
 replicaset.apps/nginx-deployment-f4769bfdf   2         2         0       14s
 ```
 
-### 4.4.2 执行备份
+#### 4.4.2 执行备份
 
 ```yaml
 [root@master velero-v1.4.2-linux-amd64]# velero backup create nginx-backup --include-namespaces nginx-example
@@ -541,7 +537,7 @@ Items backed up:              23
 Velero-Native Snapshots: <none included>
 ```
 
-### 4.4.3 查看备份信息
+#### 4.4.3 查看备份信息
 
 * 登录minio查看备份信息
 
@@ -553,9 +549,9 @@ Velero-Native Snapshots: <none included>
 
 ![image-20200722134049185](/Users/xuel/Library/Application Support/typora-user-images/image-20200722134049185.png)
 
-### 4.4.4 进行恢复测试
+#### 4.4.4 进行恢复测试
 
-#### 4.4.4.1 删除nginx服务
+##### 4.4.4.1 删除nginx服务
 
 ```shell
 [root@master velero-v1.4.2-linux-amd64]# kubectl delete -f examples/nginx-app/base.yaml 
@@ -564,7 +560,7 @@ deployment.apps "nginx-deployment" deleted
 service "my-nginx" deleted
 ```
 
-#### 4.4.4.2 恢复nginx服务
+##### 4.4.4.2 恢复nginx服务
 
 ```shell
 [root@master velero-v1.4.2-linux-amd64]# velero restore create --from-backup nginx-backup --wait
@@ -582,13 +578,13 @@ nginx-deployment-f4769bfdf-sqfp4   1/1     Running   0          7s
 
 ![image-20200722135213502](/Users/xuel/Library/Application Support/typora-user-images/image-20200722135213502.png)
 
-# 五 实践velero备份OSS
+## 五 实践velero备份OSS
 
 本实例实践如何在阿里云容器服务 ACK 使用 Velero 完成备份和迁移。
 
 ACK 插件地址：https://github.com/AliyunContainerService/velero-plugin
 
-## 5.1 创建OSS bucket
+### 5.1 创建OSS bucket
 
 由于为低频存储，类型为低频访问存储，权限为私有
 
@@ -606,11 +602,11 @@ ACK 插件地址：https://github.com/AliyunContainerService/velero-plugin
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20200812105435.png)
 
-## 5.2 创建阿里云RAM用户
+### 5.2 创建阿里云RAM用户
 
 在此需要创建一个阿里云RAM用户，用于操作OSS以及ACK资源。
 
-### 5.2.1 新建权限策略
+#### 5.2.1 新建权限策略
 
 ![image-20200811131557344](/Users/xuel/Library/Application Support/typora-user-images/image-20200811131557344.png)
 
@@ -645,21 +641,21 @@ ACK 插件地址：https://github.com/AliyunContainerService/velero-plugin
 
 
 
-### 5.2.2 新建用户
+#### 5.2.2 新建用户
 
 在新建用户的时候要选择 `编程访问`，来获取 `AccessKeyID` 和 `AccessKeySecret`，这里请创建一个新用于用于备份，不要使用老用户的 AK 和 AS。
 
 ![image-20200811131511712](/Users/xuel/Library/Application Support/typora-user-images/image-20200811131511712.png)
 
-## 5.3 部署服务端
+### 5.3 部署服务端
 
-### 5.3.1 拉取velero插件
+#### 5.3.1 拉取velero插件
 
 ```shell
 git clone https://github.com/AliyunContainerService/velero-plugin
 ```
 
-### 5.3.2 配置参数
+#### 5.3.2 配置参数
 
 * 修改 `install/credentials-velero` 文件，将新建用户中获得的 `AccessKeyID` 和 `AccessKeySecret` 填入。
 
@@ -756,9 +752,9 @@ default   alibabacloud   devops-k8s-backup/velero   ReadWrite
 
 
 
-## 5.4 备份恢复
+### 5.4 备份恢复
 
-### 5.4.1 备份
+#### 5.4.1 备份
 
 ```shell
 $ velero backup create nginx-example --include-namespaces nginx-example
@@ -766,7 +762,7 @@ $ velero backup create nginx-example --include-namespaces nginx-example
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20200812093104.png)
 
-### 5.4.2 恢复
+#### 5.4.2 恢复
 
 ```shell
  velero restore create --from-backup nginx-example
@@ -774,7 +770,7 @@ $ velero backup create nginx-example --include-namespaces nginx-example
 
 
 
-## 5.4.3 周期性任务
+#### 5.4.3 周期性任务
 
 ```shell
 # Create a backup every 6 hours
@@ -806,7 +802,7 @@ velero create schedule anchnet-devops-common-test --schedule="@every 24h" --incl
 
 ![image-20200812124028229](/Users/xuel/Library/Application Support/typora-user-images/image-20200812124028229.png)
 
-# 六 注意事项
+## 六 注意事项
 
 * 在velero备份的时候，备份过程中创建的对象是不会被备份的。
 * `velero restore` 恢复不会覆盖`已有的资源`，只恢复当前集群中`不存在的资源`。已有的资源不会回滚到之前的版本，如需要回滚，需在restore之前提前删除现有的资源。
@@ -815,9 +811,8 @@ velero create schedule anchnet-devops-common-test --schedule="@every 24h" --incl
 
 * 在高版本1.16.x中，报错`error: unable to recognize "filebeat.yml": no matches for kind "DaemonSet" in version "extensions/v1beta1"` ,将yml配置文件内的api接口修改为 apps/v1 ，导致原因为之间使用的kubernetes 版本是1.14.x版本，1.16.x 版本放弃部分API支持！
 
-  
 
-# 参考资料
+## 参考资料
 
 * https://www.hi-linux.com/posts/60858.html
 * https://zhuanlan.zhihu.com/p/92853124
