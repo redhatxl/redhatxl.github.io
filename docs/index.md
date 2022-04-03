@@ -17,6 +17,8 @@
     
         - [51CTO](https://blog.51cto.com/kaliarch)
 
+        - [InfoQ](https://www.infoq.cn/u/kaliarch/publish)
+
 
 ## 其他笔记
 
