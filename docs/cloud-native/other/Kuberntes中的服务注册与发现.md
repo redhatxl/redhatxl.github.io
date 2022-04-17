@@ -190,10 +190,6 @@ kube-proxy 会创建 iptables 或者 IPVS 规则，告知节点捕获目标为 S
 
 ![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220315131850.png)
 
-
-
-
-
 ## 参考链接
 
 * https://nigelpoulton.com/demystifying-kubernetes-service-discovery/

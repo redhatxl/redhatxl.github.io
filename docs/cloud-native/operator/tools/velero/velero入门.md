@@ -80,12 +80,6 @@ TTL 标志允许用户在表单 -- TTL 24h0m0s 中指定以小时、分钟和秒
 
 同样，如果备份对象存在于 Kubernetes 但不在对象存储中，那么它将从 Kubernetes 删除，因为备份 tarball 不再存在。
 
-
-
-
-
-
-
 # 参考链接
 
 * https://velero.io/docs/v1.6/

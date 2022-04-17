@@ -330,18 +330,6 @@ velero restore create RESTORE_NAME \
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 # 参考链接
 
 * https://velero.io/docs/v1.5/disaster-case/

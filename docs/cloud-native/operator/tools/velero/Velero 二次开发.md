@@ -666,15 +666,9 @@ tags: ['Velero Team', 'Nolan Brubaker']
 
 理想情况下，每个博客都有一个独特的图像可以在博客主页上使用，但如果您不包含图像，则将使用默认的 Velero 徽标。使用小于 70KB 的图像并将其添加到 /site/static/img/posts 文件夹。
 
-
-
 # 七 文档风格
 
 参考：https://velero.io/docs/v1.5/style-guide/
-
-
-
-
 
 # 参考链接
 

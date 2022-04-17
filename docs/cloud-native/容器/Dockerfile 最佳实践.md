@@ -8,31 +8,31 @@
 
 镜像的构建顺序很重要，当你向 Dockerfile 中添加文件，或者修改其中的某一行时，那一部分的缓存就会失效，该缓存的后续步骤都会中断，需要重新构建。
 
-![image-20190722092504021](/Users/xuel/Library/Application Support/typora-user-images/image-20190722092504021.png)
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220404200747.png)
 
 ### 1.2 只拷贝需要文件，防止缓存溢出
 
 当拷贝文件到镜像中时，尽量只拷贝需要的文件，切忌使用 COPY . 指令拷贝整个目录。如果被拷贝的文件内容发生了更改，缓存就会被破坏。在上面的示例中，镜像中只需要构建好的 jar 包，因此只需要拷贝这个文件就行了，这样即使其他不相关的文件发生了更改也不会影响缓存。
 
-![image-20190729133017239](/Users/xuel/Library/Application Support/typora-user-images/image-20190729133017239.png)
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220404200759.png)
 
 ### 1.3 最小化可缓存的执行层
 
 每一个RUN指令都会被看作可缓存的执行单元，太多的RUN指令会增加镜像的层数，增大镜像的体积，而将所有的指令都放在一个RUN指令又会破坏缓存，从而延缓开放周期，一般都会先更新软件索引信息，然后再安装软件。推荐将更新索引和安装软件放在同一个 RUN 指令中，这样可以形成一个可缓存的执行单元，否则你可能会安装旧的软件包。
 
-![image-20190729133340399](/Users/xuel/Library/Application Support/typora-user-images/image-20190729133340399.png)
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220404200810.png)
 
 ### 1.4 删除比必要的依赖
 
 删除不必要的依赖，不要安装调试工具。如果实在需要调试工具，可以在容器运行之后再安装。某些包管理工具（如 apt）除了安装用户指定的包之外，还会安装推荐的包，这会无缘无故增加镜像的体积。apt 可以通过添加参数 -–no-install-recommends 来确保不会安装不需要的依赖项。如果确实需要某些依赖项，请在后面手动添加。
 
-![image-20190729133642911](/Users/xuel/Library/Application Support/typora-user-images/image-20190729133642911.png)
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220404200822.png)
 
 ### 1.5 删除管理工具的缓存
 
 包管理工具会维护自己的缓存，这些缓存会保留在镜像文件中，推荐的处理方法是在每一个 RUN 指令的末尾删除缓存。如果你在下一条指令中删除缓存，不会减小镜像的体积。
 
-![image-20190729134343921](/Users/xuel/Library/Application Support/typora-user-images/image-20190729134343921.png)
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220404200833.png)
 
 ## 二 可维护性
 
@@ -40,19 +40,19 @@
 
 使用官方镜像可以节省大量的维护时间，因为官方镜像的所有安装步骤都使用了最佳实践。如果你有多个项目，可以共享这些镜像层，因为他们都可以使用相同的基础镜像。
 
-![image-20190729140131016](/Users/xuel/Library/Application Support/typora-user-images/image-20190729140131016.png)
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220404200845.png)
 
 ### 2.2 使用更具体的标签
 
 基础镜像尽量不要使用 latest 标签。虽然这很方便，但随着时间的推移，latest 镜像可能会发生重大变化。因此在 Dockerfile 中最好指定基础镜像的具体标签。我们使用 openjdk 作为示例，指定标签为 8。其他更多标签请查看官方仓库。
 
-![image-20190729140236946](/Users/xuel/Library/Application Support/typora-user-images/image-20190729140236946.png)
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220404200858.png)
 
 ### 2.3 使用体积更小的基础镜像
 
 基础镜像的标签风格不同，镜像体积就会不同。slim 风格的镜像是基于 Debian 发行版制作的，而 alpine 风格的镜像是基于体积更小的 Alpine Linux 发行版制作的。其中一个明显的区别是：Debian 使用的是 GNU 项目所实现的 C 语言标准库，而 Alpine 使用的是 Musl C 标准库，它被设计用来替代 GNU C 标准库（glibc）的替代品，用于嵌入式操作系统和移动设备。因此使用 Alpine 在某些情况下会遇到兼容性问题。以 openjdk 为例，jre 风格的镜像只包含 Java 运行时，不包含 SDK，这么做也可以大大减少镜像体积。
 
-![image-20190729150101215](/Users/xuel/Library/Application Support/typora-user-images/image-20190729150101215.png)
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220404200913.png)
 
 ### 2.4 给镜像设置合适的LABEL
 
@@ -60,11 +60,11 @@
 
 在 Dockerfile 中可以使用 Label 命令来为镜像增加 Label，示例如下：
 
-![image-20190730111305523](/Users/xuel/Library/Application Support/typora-user-images/image-20190730111305523.png)
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220404200923.png)
 
 我们可以查看到 Label 及使用 Label 进行筛选:
 
-![image-20190730111320438](/Users/xuel/Library/Application Support/typora-user-images/image-20190730111320438.png)
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220404200936.png)
 
 ## 三 重复利用
 
@@ -76,17 +76,15 @@
 
 虽然现在我们解决了环境不一致的问题，但还有另外一个问题：每次代码更改之后，都要重新获取一遍 pom.xml 中描述的所有依赖项。下面我们来解决这个问题。
 
-![image-20190729150225726](/Users/xuel/Library/Application Support/typora-user-images/image-20190729150225726.png)
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220404200945.png)
 
 ### 3.2 在单独的步骤中获取依赖项目
 
 结合前面提到的缓存机制，我们可以让获取依赖项这一步变成可缓存单元，只要 pom.xml 文件的内容没有变化，无论代码如何更改，都不会破坏这一层的缓存。上图中两个 COPY 指令中间的 RUN 指令用来告诉 Maven 只获取依赖项。
 
-
-
 现在又遇到了一个新问题：跟之前直接拷贝 jar 包相比，镜像体积变得更大了，因为它包含了很多运行应用时不需要的构建依赖项。
 
-![image-20190729165732501](/Users/xuel/Library/Application Support/typora-user-images/image-20190729165732501.png)
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220404201009.png)
 
 
 
@@ -94,13 +92,11 @@
 
 多阶段构建可以由多个 FROM 指令识别，每一个 FROM 语句表示一个新的构建阶段，阶段名称可以用 AS 参数指定。本例中指定第一阶段的名称为 builder，它可以被第二阶段直接引用。两个阶段环境一致，并且第一阶段包含所有构建依赖项。
 
-
-
 第二阶段是构建最终镜像的最后阶段，它将包括应用运行时的所有必要条件，本例是基于 Alpine 的最小 JRE 镜像。上一个构建阶段虽然会有大量的缓存，但不会出现在第二阶段中。为了将构建好的 jar 包添加到最终的镜像中，可以使用 COPY --from=STAGE_NAME 指令，其中 STAGE_NAME 是上一构建阶段的名称。
 
-![image-20190729165918270](/Users/xuel/Library/Application Support/typora-user-images/image-20190729165918270.png)
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220404201033.png)
 
-![image-20190729165938812](/Users/xuel/Library/Application Support/typora-user-images/image-20190729165938812.png)
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220404201043.png)
 
 ## 四 构建
 
@@ -112,8 +108,8 @@
 
 Docker 分阶段构建就可以很好地解决这个问题，使用如下的 Dockerfile 即可：
 
-![image-20190730111034835](/Users/xuel/Library/Application Support/typora-user-images/image-20190730111034835.png)
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220404201055.png)
 
 整个 Dockerfile 流程很清晰，也不在需要额外的 shell 脚本来支持整个流程，并且我们可以指定执行的 stage，具体命令如下：
 
-![image-20190730111053818](/Users/xuel/Library/Application Support/typora-user-images/image-20190730111053818.png)
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20220404201105.png)

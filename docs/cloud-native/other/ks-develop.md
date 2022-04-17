@@ -136,10 +136,6 @@ kubectl apply -f https://github.com/kubesphere/ks-installer/releases/download/v3
 
 
 
-
-
-
-
 ## 参考链接
 
 * https://kubesphere.com.cn/forum/d/2956-kubesphere/3

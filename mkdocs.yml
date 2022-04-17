@@ -222,7 +222,7 @@ nav:
         - cloud-native/安全/Kubeeye源码分析.md
         - cloud-native/安全/Kubernetes安全之Kubeeye.md
         - cloud-native/安全/Kubernetes安全之NPD.md
-        - cloud-native/安全/Kubernetes安全之OpenPolicy
+        - cloud-native/安全/Kubernetes安全之Open\ Policy\ Agent.md
         - cloud-native/安全/Kubernetes安全之openebs.md
         - cloud-native/安全/Kubernetes安全分析.md
         - cloud-native/安全/kubernetes安全之Polaris.md

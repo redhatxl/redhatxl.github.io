@@ -384,25 +384,13 @@ kubectl delete  ct my-test-crontab
 kubectl delete crd crontabs.crd.test.com
 ```
 
-
-
 # 四 注意事项
-
-
-
-
-
-
 
 # 五 总结
 
 功能上：CRD 使得 Kubernetes 已有的资源和能力变成了乐高积木，我们很轻松就可以利用这些积木拓展 Kubernetes 原生不具备的能力。
 
 产品上：基于 Kubernetes 做的产品无法避免的需要让我们将产品术语向 Kube 术语靠拢，比如一个服务就是一个 Deployment，一个实例就是一个 Pod 之类。但是 CRD 允许我们自己基于产品创建概念（或者说资源），让 Kube 已有的资源为我们的概念服务，这可以使产品更专注与解决的场景，而不是如何思考如何将场景应用到 Kubernetes。
-
-
-
-
 
 # 参考链接
 
