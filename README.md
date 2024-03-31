@@ -3,6 +3,11 @@
 
 >  包含且不仅限于 云原生,Devops,Golang,Python,Shell,云架构,kubernetes
 
+> 擅长国内外主流云架构
+
+![](https://kaliarch-bucket-1251990360.cos.ap-beijing.myqcloud.com/blog_img/20240331174858.png)
+
+
 ## 个人信息：
 
 
@@ -13,6 +18,8 @@
 - [慕课网](https://www.imooc.com/u/1260704)
 
 - [51CTO](https://blog.51cto.com/kaliarch)
+
+- [InfoQ](https://www.infoq.cn/u/kaliarch/publish)
 
 
 ## 其他笔记
